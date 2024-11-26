@@ -20,9 +20,9 @@
             align-items: center; /* 置中對齊 */
         }
         button {
-            margin: 20px 0; /* 垂直間距 */
+            margin: 10px 0; /* 垂直間距 */
             padding: 10px 20px;
-            font-size: 20px;
+            font-size: 18px;
             background-color: blue; /* 藍底 */
             color: yellow; /* 黃字 */
             border: none;
@@ -33,7 +33,7 @@
             opacity: 0.8; /* 滑鼠懸停效果 */
         }
     </style>
-<script>
+    <script>
         function openNewPage(group) {
             const newWindow = window.open("", "_blank");
             newWindow.document.write(`
@@ -68,7 +68,11 @@
                     </style>
                 </head>
                 <body>
-                    ${Array.from({ length: 40 }, (_, i) => `<div class="option">${i + 1}</div>`).join('')}
+                    ${Array.from({ length: 40 }, (_, i) => `
+                        <div class="option" onclick="window.open('file_path_${i + 1}.html', '_blank')">
+                            ${i + 1}
+                        </div>
+                    `).join('')}
                 </body>
                 </html>
             `);
