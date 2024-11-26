@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選項網頁</title>
+    <style>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px;
+        }
+        .button {
+            padding: 20px;
+            text-align: center;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h1>第一組</h1>
+<div class="grid">
+    <button class="button" onclick="openOptions('第一組選項1')">選項1</button>
+    <button class="button" onclick="openOptions('第一組選項2')">選項2</button>
+    <button class="button" onclick="openOptions('第一組選項3')">選項3</button>
+    <button class="button" onclick="openOptions('第一組選項4')">選項4</button>
+    <button class="button" onclick="openOptions('第一組選項5')">選項5</button>
+    <button class="button" onclick="openOptions('第一組選項6')">選項6</button>
+    
+    
+</div>
+
+<h1>第二組</h1>
+<!-- 第二組的選項可以在這裡添加 -->
+     <button class="button" onclick="openOptions('第一組選項7')">選項7</button>
+    <button class="button" onclick="openOptions('第一組選項8')">選項8</button>
+    <button class="button" onclick="openOptions('第一組選項9')">選項9</button>
+    <button class="button" onclick="openOptions('第一組選項10')">選項10</button>
+    <button class="button" onclick="openOptions('第一組選項11')">選項11</button>
+<h1>第三組</h1>
+<!-- 第三組的選項可以在這裡添加 -->
+    <button class="button" onclick="openOptions('第一組選項12')">選項12</button>
+    <button class="button" onclick="openOptions('第一組選項13')">選項13</button>
+    <button class="button" onclick="openOptions('第一組選項14')">選項14</button>
+    <button class="button" onclick="openOptions('第一組選項15')">選項15</button>
+    <button class="button" onclick="openOptions('第一組選項16')">選項16</button>
+<script>
+    function openOptions(group) {
+        window.open('options.html?group=' + encodeURIComponent(group), '_blank');
+    }
+</script>
+
+</body>
+</html>
