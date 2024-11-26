@@ -19,60 +19,18 @@
             font-size: 24px;
         }
         button {
-            margin-top: 20px;
+            margin: 10px;
             padding: 10px 20px;
-            font-size: 16px;
+            font-size: 18px;
         }
     </style>
-    <script>
-        function openNewPage() {
-            const newWindow = window.open("", "_blank");
-            newWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="zh-Hant">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>4x10 選項</title>
-                    <style>
-                        body {
-                            display: flex;
-                            flex-wrap: wrap;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                            margin: 0;
-                            font-family: Arial, sans-serif;
-                            background-color: #f0f0f0;
-                        }
-                        .option {
-                            width: 100px;
-                            height: 100px;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            border: 1px solid #000;
-                            margin: 5px;
-                            font-size: 20px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${Array.from({ length: 40 }, (_, i) => `<div class="option">${i + 1}</div>`).join('')}
-                </body>
-                </html>
-            `);
-            newWindow.document.close();
-        }
-    </script>
 </head>
 <body>
     <div class="container">
-        <div>第一組</div>
-        <div>第二組</div>
-        <div>第三組</div>
-        <div>備用</div>
-        <button onclick="openNewPage()">開啟 4x10 選項</button>
+        <button>第一組</button>
+        <button>第二組</button>
+        <button>第三組</button>
+        <button>備用</button>
     </div>
 </body>
 </html>
