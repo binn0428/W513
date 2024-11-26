@@ -33,13 +33,55 @@
             opacity: 0.8; /* 滑鼠懸停效果 */
         }
     </style>
+<script>
+        function openNewPage(group) {
+            const newWindow = window.open("", "_blank");
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="zh-Hant">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${group} 選項</title>
+                    <style>
+                        body {
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            margin: 0;
+                            font-family: Arial, sans-serif;
+                            background-color: #f0f0f0;
+                        }
+                        .option {
+                            width: 100px;
+                            height: 100px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            border: 1px solid #000;
+                            margin: 5px;
+                            font-size: 20px;
+                            cursor: pointer;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${Array.from({ length: 40 }, (_, i) => `<div class="option">${i + 1}</div>`).join('')}
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        }
+    </script>
 </head>
 <body>
     <div class="container">
-        <button>第一組</button>
-        <button>第二組</button>
-        <button>第三組</button>
-        <button>備用</button>
+        <button onclick="openNewPage('第一組')">第一組</button>
+        <button onclick="openNewPage('第二組')">第二組</button>
+        <button onclick="openNewPage('第三組')">第三組</button>
+        <button onclick="openNewPage('備用')">備用</button>
     </div>
 </body>
 </html>
