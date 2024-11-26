@@ -34,7 +34,7 @@
         }
     </style>
     <script>
-        function openNewPage(group) {
+        function openNewPage(group, buttonNames, imagePaths) {
             const newWindow = window.open("", "_blank");
             newWindow.document.write(`
                 <!DOCTYPE html>
@@ -69,8 +69,8 @@
                 </head>
                 <body>
                     ${Array.from({ length: 40 }, (_, i) => `
-                        <div class="option" onclick="window.open('image_${i + 1}.jpg', '_blank')">
-                            ${i + 1}
+                        <div class="option" onclick="window.open('${imagePaths[i]}', '_blank')">
+                            ${buttonNames[i]}
                         </div>
                     `).join('')}
                 </body>
@@ -82,10 +82,50 @@
 </head>
 <body>
     <div class="container">
-        <button onclick="openNewPage('第一組')">第一組</button>
-        <button onclick="openNewPage('第二組')">第二組</button>
-        <button onclick="openNewPage('第三組')">第三組</button>
-        <button onclick="openNewPage('備用')">備用</button>
+        <button onclick="openNewPage('第一組', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg', 'image6.jpg', 'image7.jpg', 'image8.jpg', 
+             'image9.jpg', 'image10.jpg', 'image11.jpg', 'image12.jpg', 'image13.jpg', 'image14.jpg', 'image15.jpg', 
+             'image16.jpg', 'image17.jpg', 'image18.jpg', 'image19.jpg', 'image20.jpg', 'image21.jpg', 'image22.jpg', 
+             'image23.jpg', 'image24.jpg', 'image25.jpg', 'image26.jpg', 'image27.jpg', 'image28.jpg', 'image29.jpg', 
+             'image30.jpg', 'image31.jpg', 'image32.jpg', 'image33.jpg', 'image34.jpg', 'image35.jpg', 'image36.jpg', 
+             'image37.jpg', 'image38.jpg', 'image39.jpg', 'image40.jpg'])">第一組</button>
+        <button onclick="openNewPage('第二組', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg', 'image6.jpg', 'image7.jpg', 'image8.jpg', 
+             'image9.jpg', 'image10.jpg', 'image11.jpg', 'image12.jpg', 'image13.jpg', 'image14.jpg', 'image15.jpg', 
+             'image16.jpg', 'image17.jpg', 'image18.jpg', 'image19.jpg', 'image20.jpg', 'image21.jpg', 'image22.jpg', 
+             'image23.jpg', 'image24.jpg', 'image25.jpg', 'image26.jpg', 'image27.jpg', 'image28.jpg', 'image29.jpg', 
+             'image30.jpg', 'image31.jpg', 'image32.jpg', 'image33.jpg', 'image34.jpg', 'image35.jpg', 'image36.jpg', 
+             'image37.jpg', 'image38.jpg', 'image39.jpg', 'image40.jpg'])">第二組</button>
+        <button onclick="openNewPage('第三組', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg', 'image6.jpg', 'image7.jpg', 'image8.jpg', 
+             'image9.jpg', 'image10.jpg', 'image11.jpg', 'image12.jpg', 'image13.jpg', 'image14.jpg', 'image15.jpg', 
+             'image16.jpg', 'image17.jpg', 'image18.jpg', 'image19.jpg', 'image20.jpg', 'image21.jpg', 'image22.jpg', 
+             'image23.jpg', 'image24.jpg', 'image25.jpg', 'image26.jpg', 'image27.jpg', 'image28.jpg', 'image29.jpg', 
+             'image30.jpg', 'image31.jpg', 'image32.jpg', 'image33.jpg', 'image34.jpg', 'image35.jpg', 'image36.jpg', 
+             'image37.jpg', 'image38.jpg', 'image39.jpg', 'image40.jpg'])">第三組</button>
+        <button onclick="openNewPage('備用', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg', 'image6.jpg', 'image7.jpg', 'image8.jpg', 
+             'image9.jpg', 'image10.jpg', 'image11.jpg', 'image12.jpg', 'image13.jpg', 'image14.jpg', 'image15.jpg', 
+             'image16.jpg', 'image17.jpg', 'image18.jpg', 'image19.jpg', 'image20.jpg', 'image21.jpg', 'image22.jpg', 
+             'image23.jpg', 'image24.jpg', 'image25.jpg', 'image26.jpg', 'image27.jpg', 'image28.jpg', 'image29.jpg', 
+             'image30.jpg', 'image31.jpg', 'image32.jpg', 'image33.jpg', 'image34.jpg', 'image35.jpg', 'image36.jpg', 
+             'image37.jpg', 'image38.jpg', 'image39.jpg', 'image40.jpg'])">備用</button>
     </div>
 </body>
 </html>
