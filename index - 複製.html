@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資料查詢</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            background-image: url('back.jpg'); /* 設定背景圖 */
+            background-size: cover; /* 背景圖覆蓋整個畫面 */
+            background-position: center; /* 背景圖置中 */
+        }
+        .container {
+            display: flex;
+            flex-direction: column; /* 垂直排列 */
+            align-items: center; /* 置中對齊 */
+        }
+        button {
+            margin: 10px 0; /* 垂直間距 */
+            padding: 10px 20px;
+            font-size: 25px;
+            background-color: blue; /* 藍底 */
+            color: yellow; /* 黃字 */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.8; /* 滑鼠懸停效果 */
+        }
+    </style>
+    <script>
+        function openNewPage(group, buttonNames, imagePaths) {
+            const newWindow = window.open("", "_blank");
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="zh-Hant">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${group} 選項</title>
+                    <style>
+                        body {
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            margin: 0;
+                            font-family: Arial, sans-serif;
+                            
+                        }
+                        .option {
+                            width: 100px;
+                            height: 100px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            border: 1px solid #000;
+                            margin: 5px;
+                            font-size: 20px;
+                            cursor: pointer;
+                            background-color: rgba(255, 255, 255, 0.8); /* 按鍵背景色 */
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${Array.from({ length: 150 }, (_, i) => `
+                        <div class="option" onclick="window.open('${imagePaths[i]}', '_blank')">
+                            ${buttonNames[i]}
+                        </div>
+                    `).join('')}
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <button onclick="openNewPage('第一組', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['group_1/image1.jpg', 'group_1/image2.jpg', 'group_1/image3.jpg', 'group_1/image4.jpg', 'group_1/image5.jpg', 'group_1/image6.jpg', 'group_1/image7.jpg', 'group_1/image8.jpg', 
+             'group_1/image9.jpg', 'group_1/image10.jpg', 'group_1/image11.jpg', 'group_1/image12.jpg', 'group_1/image13.jpg', 'group_1/image14.jpg', 'group_1/image15.jpg', 
+             'group_1/image16.jpg', 'group_1/image17.jpg', 'group_1/image18.jpg', 'group_1/image19.jpg', 'group_1/image20.jpg', 'group_1/image21.jpg', 'group_1/image22.jpg', 
+             'group_1/image23.jpg', 'group_1/image24.jpg', 'group_1/image25.jpg', 'group_1/image26.jpg', 'group_1/image27.jpg', 'group_1/image28.jpg', 'group_1/image29.jpg', 
+             'group_1/image30.jpg', 'group_1/image31.jpg', 'group_1/image32.jpg', 'group_1/image33.jpg', 'group_1/image34.jpg', 'group_1/image35.jpg', 'group_1/image36.jpg', 
+             'group_1/image37.jpg', 'group_1/image38.jpg', 'group_1/image39.jpg', 'group_1/image40.jpg'])">第一組</button>
+        <button onclick="openNewPage('第二組', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['group_2/image1.jpg', 'group_2/image2.jpg', 'group_2/image3.jpg', 'group_2/image4.jpg', 'group_2/image5.jpg', 'group_2/image6.jpg', 'group_2/image7.jpg', 'group_2/image8.jpg', 
+             'group_2/image9.jpg', 'group_2/image10.jpg', 'group_2/image11.jpg', 'group_2/image12.jpg', 'group_2/image13.jpg', 'group_2/image14.jpg', 'group_2/image15.jpg', 
+             'group_2/image16.jpg', 'group_2/image17.jpg', 'group_2/image18.jpg', 'group_2/image19.jpg', 'group_2/image20.jpg', 'group_2/image21.jpg', 'group_2/image22.jpg', 
+             'group_2/image23.jpg', 'group_2/image24.jpg', 'group_2/image25.jpg', 'group_2/image26.jpg', 'group_2/image27.jpg', 'group_2/image28.jpg', 'group_2/image29.jpg', 
+             'group_2/image30.jpg', 'group_2/image31.jpg', 'group_2/image32.jpg', 'group_2/image33.jpg', 'group_2/image34.jpg', 'group_2/image35.jpg', 'group_2/image36.jpg', 
+             'group_2/image37.jpg', 'group_2/image38.jpg', 'group_2/image39.jpg', 'group_2/image40.jpg'])">第二組</button>
+        <button onclick="openNewPage('第三組', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['group_3/image1.jpg', 'group_3/image2.jpg', 'group_3/image3.jpg', 'group_3/image4.jpg', 'group_3/image5.jpg', 'group_3/image6.jpg', 'group_3/image7.jpg', 'group_3/image8.jpg', 
+             'group_3/image9.jpg', 'group_3/image10.jpg', 'group_3/image11.jpg', 'group_3/image12.jpg', 'group_3/image13.jpg', 'group_3/image14.jpg', 'group_3/image15.jpg', 
+             'group_3/image16.jpg', 'group_3/image17.jpg', 'group_3/image18.jpg', 'group_3/image19.jpg', 'group_3/image20.jpg', 'group_3/image21.jpg', 'group_3/image22.jpg', 
+             'group_3/image23.jpg', 'group_3/image24.jpg', 'group_3/image25.jpg', 'group_3/image26.jpg', 'group_3/image27.jpg', 'group_3/image28.jpg', 'group_3/image29.jpg', 
+             'group_3/image30.jpg', 'group_3/image31.jpg', 'group_3/image32.jpg', 'group_3/image33.jpg', 'group_3/image34.jpg', 'group_3/image35.jpg', 'group_3/image36.jpg', 
+             'group_3/image37.jpg', 'group_3/image38.jpg', 'group_3/image39.jpg', 'group_3/image40.jpg'])">第三組</button>
+        <button onclick="openNewPage('備用', 
+            ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
+             '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
+             '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
+             '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40'], 
+            ['group_4/image1.jpg', 'group_4/image2.jpg', 'group_4/image3.jpg', 'group_4/image4.jpg', 'group_4/image5.jpg', 'group_4/image6.jpg', 'group_4/image7.jpg', 'group_4/image8.jpg', 
+             'group_4/image9.jpg', 'group_4/image10.jpg', 'group_4/image11.jpg', 'group_4/image12.jpg', 'group_4/image13.jpg', 'group_4/image14.jpg', 'group_4/image15.jpg', 
+             'group_4/image16.jpg', 'group_4/image17.jpg', 'group_4/image18.jpg', 'group_4/image19.jpg', 'group_4/image20.jpg', 'group_4/image21.jpg', 'group_4/image22.jpg', 
+             'group_4/image23.jpg', 'group_4/image24.jpg', 'group_4/image25.jpg', 'group_4/image26.jpg', 'group_4/image27.jpg', 'group_4/image28.jpg', 'group_4/image29.jpg', 
+             'group_4/image30.jpg', 'group_4/image31.jpg', 'group_4/image32.jpg', 'group_4/image33.jpg', 'group_4/image34.jpg', 'group_4/image35.jpg', 'group_4/image36.jpg', 
+             'group_4/image37.jpg', 'group_4/image38.jpg', 'group_4/image39.jpg', 'group_4/image40.jpg'])">備用</button>
+    </div>
+</body>
+</html>
+
