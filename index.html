@@ -353,7 +353,7 @@
             ];
             const filteredImages = images.filter(image => image.toLowerCase().includes(input));
             if (filteredImages.length > 0) {
-                const newWindow = window.open("", "_blank", "noopener,noreferrer");
+                const newWindow = window.open("", "_blank");
                 newWindow.document.write(`
                     <!DOCTYPE html>
                     <html lang="zh-Hant">
