@@ -284,6 +284,10 @@
              'group_4/image156.jpg', 'group_4/image157.jpg', 'group_4/image158.jpg', 'group_4/image159.jpg', 'group_4/image160.jpg'
             ];
             const filteredImages = images.filter(image => image.toLowerCase().includes(input));
+            if (input.trim() === "") {
+                alert('請輸入搜尋內容');
+                return;
+            }
             if (filteredImages.length > 0) {
                 const newWindow = window.open("", "_blank");
                 newWindow.document.write(`
