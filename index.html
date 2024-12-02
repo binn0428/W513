@@ -93,6 +93,8 @@
 </head>
 <body>
     <div class="container">
+        <input type="text" id="searchInput" placeholder="搜尋圖片..." style="font-size: 20px; width: 300px;" />
+        <button onclick="searchImages()">天車資料搜尋</button>
         <button onclick="openNewPage('第一組', 
             ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
              '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
@@ -253,6 +255,56 @@
              'group_4/image149.jpg', 'group_4/image150.jpg', 'group_4/image151.jpg', 'group_4/image152.jpg', 'group_4/image153.jpg', 'group_4/image154.jpg', 'group_4/image155.jpg', 
              'group_4/image156.jpg', 'group_4/image157.jpg', 'group_4/image158.jpg', 'group_4/image159.jpg', 'group_4/image160.jpg'])">天車遙控</button>
     </div>
+    <script>
+        function searchImages() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const images = [
+                'group_4/6SCC80T1.jpg', 'group_4/6SCC80T2.jpg', 'group_4/A11611.jpg', 'group_4/A11612.jpg', 'group_4/A35311.jpg', 'group_4/A53411.jpg', 'group_4/B35411.jpg', 'group_4/B35412.jpg', 
+             'group_4/B35421.jpg', 'group_4/B35422.jpg', 'group_4/B54611.jpg', 'group_4/B54612.jpg', 'group_4/B57311.jpg', 'group_4/B59121.jpg', 'group_4/B59122.jpg', 
+             'group_4/B62111.jpg', 'group_4/B62112.jpg', 'group_4/B62221.jpg', 'group_4/B62222.jpg', 'group_4/C11011.jpg', 'group_4/C11012.jpg', 'group_4/C11711.jpg', 
+             'group_4/C11712.jpg', 'group_4/C11911.jpg', 'group_4/C35311.jpg', 'group_4/C35312.jpg', 'group_4/C35321.jpg', 'group_4/C35322.jpg', 'group_4/C35611.jpg', 
+             'group_4/C35612.jpg', 'group_4/C35711.jpg', 'group_4/C35712.jpg', 'group_4/C52411.jpg', 'group_4/C53511.jpg', 'group_4/C53512.jpg', 'group_4/C54711.jpg', 
+             'group_4/C54712.jpg', 'group_4/CSU11.jpg', 'group_4/CSU12.jpg', 'group_4/CSU21.jpg', 'group_4/CSU22.jpg', 'group_4/D35311.jpg', 'group_4/D35312.jpg', 
+             'group_4/D35321.jpg', 'group_4/D35322.jpg', 'group_4/D56421.jpg', 'group_4/D56422.jpg', 'group_4/E54411.jpg', 'group_4/E54412.jpg', 'group_4/E54511.jpg', 
+             'group_4/E54512.jpg', 'group_4/F61011.jpg', 'group_4/F61012.jpg', 'group_4/F61021.jpg', 'group_4/F61022.jpg', 'group_4/F61031.jpg', 'group_4/F61032.jpg', 
+             'group_4/H52521.jpg', 'group_4/H53511.jpg', 'group_4/H53512.jpg', 'group_4/H53521.jpg', 'group_4/H53522.jpg', 'group_4/J48111.jpg', 'group_4/J48112.jpg', 
+             'group_4/J61011.jpg', 'group_4/J61012.jpg', 'group_4/J61021.jpg', 'group_4/J61022.jpg', 'group_4/J61031.jpg', 'group_4/J610320.jpg', 'group_4/J61041.jpg', 
+             'group_4/J61042.jpg', 'group_4/J61051.jpg', 'group_4/J61052.jpg', 'group_4/J61061.jpg', 'group_4/J61062.jpg', 'group_4/J61071.jpg', 'group_4/J61072.jpg', 
+             'group_4/J64111.jpg', 'group_4/J64112.jpg', 'group_4/J68011.jpg', 'group_4/J68012.jpg', 'group_4/J68021.jpg', 'group_4/J68022.jpg', 'group_4/J68031.jpg', 
+             'group_4/J68032.jpg', 'group_4/J68041.jpg', 'group_4/J68042.jpg', 'group_4/J68051.jpg', 'group_4/J68052.jpg', 'group_4/J68071.jpg', 'group_4/J68072.jpg', 
+             'group_4/K61611.jpg', 'group_4/K61612.jpg', 'group_4/K61621.jpg', 'group_4/K61622.jpg', 'group_4/K64221.jpg', 'group_4/K64222.jpg', 'group_4/N62011.jpg', 
+             'group_4/N62012.jpg', 'group_4/Q53121.jpg', 'group_4/Q53122.jpg', 'group_4/Q61711.jpg', 'group_4/Q61712.jpg', 'group_4/Q61721.jpg', 'group_4/Q61722.jpg', 
+             'group_4/T35311.jpg', 'group_4/T35312.jpg', 'group_4/T35321.jpg', 'group_4/T35322.jpg', 'group_4/T48311.jpg', 'group_4/T48312.jpg', 'group_4/T51711.jpg', 
+             'group_4/T51712.jpg', 'group_4/T51821.jpg', 'group_4/T51822.jpg', 'group_4/T68021.jpg', 'group_4/T68022.jpg', 'group_4/T68041.jpg', 'group_4/T68042.jpg', 
+             'group_4/T68051.jpg', 'group_4/U61251.jpg', 'group_4/U61252.jpg', 'group_4/U62121.jpg', 'group_4/U62122.jpg', 'group_4/Y52121.jpg', 'group_4/Y53111.jpg', 
+             'group_4/Y53112.jpg', 'group_4/Y54101.jpg', 'group_4/Y54102.jpg', 'group_4/Z68011.jpg', 'group_4/Z68012.jpg', 'group_4/Z68021.jpg', 'group_4/Z68022.jpg', 
+             'group_4/Z68031.jpg', 'group_4/Z68032.jpg', 'group_4/Z68041.jpg', 'group_4/Z68042.jpg', 'group_4/Z68061.jpg', 'group_4/Z68062.jpg', 'group_4/Z68071.jpg', 
+             'group_4/Z68072.jpg', 'group_4/Z68081.jpg', 'group_4/Z68082.jpg', 'group_4/image145.jpg', 'group_4/image146.jpg', 'group_4/image147.jpg', 'group_4/image148.jpg', 
+             'group_4/image149.jpg', 'group_4/image150.jpg', 'group_4/image151.jpg', 'group_4/image152.jpg', 'group_4/image153.jpg', 'group_4/image154.jpg', 'group_4/image155.jpg', 
+             'group_4/image156.jpg', 'group_4/image157.jpg', 'group_4/image158.jpg', 'group_4/image159.jpg', 'group_4/image160.jpg'
+            ];
+            const filteredImages = images.filter(image => image.toLowerCase().includes(input));
+            if (filteredImages.length > 0) {
+                const newWindow = window.open("", "_blank");
+                newWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="zh-Hant">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>搜尋結果</title>
+                    </head>
+                    <body>
+                        ${filteredImages.map(img => `<img src="${img}" style="max-width: 100%; height: auto;" />`).join('')}
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+            } else {
+                alert('未找到符合的圖片');
+            }
+        }
+    </script>
 </body>
 </html>
 
