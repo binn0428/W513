@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>資料查詢</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             display: flex;
@@ -154,11 +155,96 @@
             }
         }
     </script>
+    <script>
+        // 新增分機搜尋相關函數
+        let telData = null;
+
+        // 載入分機資料
+        fetch('tel/分機資料.xlsx')
+            .then(response => response.arrayBuffer())
+            .then(data => {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                telData = XLSX.utils.sheet_to_json(worksheet);
+                console.log('分機資料載入成功');
+            })
+            .catch(error => console.error('Error loading tel data:', error));
+
+        function searchTel() {
+            const input = document.getElementById('telSearchInput').value.trim();
+            if (input === "") {
+                alert('請輸入分機號碼');
+                return;
+            }
+
+            if (!telData) {
+                alert('請先讀取分機資料');
+                return;
+            }
+
+            const result = telData.find(row => {
+                // 檢查所有可能的欄位名稱
+                const possibleColumns = ['分機號碼', '線組編號', '裝機位置', '電話', '號碼'];
+                return possibleColumns.some(col => row[col] && row[col].toString() === input);
+            });
+            
+            const newWindow = window.open("", "_blank", "width=400,height=300");
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="zh-Hant">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>分機搜尋結果</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                            text-align: left;
+                        }
+                        .result {
+                            margin-top: 20px;
+                            font-size: 16px;
+                            color: #333;
+                            line-height: 1.6;
+                        }
+                        .label {
+                            font-weight: bold;
+                            color: #666;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="result">
+                        ${result ? `
+                            <div><span class="label">使用單位：</span>${result['使用單位'] || '無資料'}</div>
+                            <div><span class="label">線組編號：</span>${result['線組編號'] || '無資料'}</div>
+                            <div><span class="label">G450 Port：</span>${result['G450 Port'] || '無資料'}</div>
+                            <div><span class="label">分機種類：</span>${result['分機種類'] || '無資料'}</div>
+                            <div><span class="label">副機數量：</span>${result['副機數量'] || '無資料'}</div>
+                            <div><span class="label">裝機位置：</span>${result['裝機位置'] || '無資料'}</div>
+                            
+                        ` : '未找到符合的分機資料'}
+                    </div>
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <input type="text" id="searchInput" placeholder="搜尋圖片..." style="font-size: 20px; width: 300px;" />
         <button onclick="searchImages()" style="background-color: #32CD32; color: black; font-weight: bold;">天車資料搜尋</button>
+        <!-- 新增分機搜尋區域 -->
+        <input type="text" id="telSearchInput" placeholder="搜尋分機..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
+        <button onclick="searchTel()" style="background-color: #FF6B6B; color: white; font-weight: bold;">分機搜尋</button>
+        <!-- 新增 Excel 檔案上傳區域 -->
+        <div style="margin-top: 10px;">
+            <input type="file" id="excelFile" accept=".xlsx, .xls" style="font-size: 16px;" />
+            <button onclick="readExcelData()" style="background-color: #4CAF50; color: white; font-weight: bold;">讀取 Excel</button>
+        </div>
         <button onclick="openNewPage('第一組', 
             ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
              '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
@@ -205,12 +291,12 @@
              '按鍵21', '按鍵22', '按鍵23', '按鍵24', '按鍵25', '按鍵26', '按鍵27', '按鍵28', '按鍵29', '按鍵30', 
              '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40',
              '按鍵41', '按鍵42', '按鍵43', '按鍵44', '按鍵45', '按鍵46', '按鍵47', '按鍵48', '按鍵49', '按鍵50',
-             '按鍵51', '按鍵52', '按鍵53', '按鍵54', '按鍵55', '按鍵56', '按鍵57', '按鍵58', '按鍵59', '按鍵60',
+             '按鍵51', '按鍵52', '按鍵53', '按鍵54', '按鍵55', '按鍵56', '按鍵57', '按58', '按鍵59', '按鍵60',
              '按鍵61', '按鍵62', '按鍵63', '按鍵64', '按鍵65', '按鍵66', '按鍵67', '按鍵68', '按鍵69', '按鍵70',
              '按鍵71', '按鍵72', '按鍵73', '按鍵74', '按鍵75', '按鍵76', '按鍵77', '按鍵78', '按鍵79', '按鍵80',
              '按鍵81', '按鍵82', '按鍵83', '按鍵84', '按鍵85', '按鍵86', '按鍵87', '按鍵88', '按鍵89', '按鍵90',
              '按鍵91', '按鍵92', '按鍵93', '按鍵94', '按鍵95', '按鍵96', '按鍵97', '按鍵98', '按鍵99', '按鍵100',
-             '按鍵101', '按鍵102', '按鍵103', '按鍵104', '按鍵105', '按鍵106', '按鍵107', '按鍵108', '按鍵109', '按鍵110',
+             '按鍵101', '按鍵102', '按鍵103', '按104', '按鍵105', '鍵106', '按鍵107', '按鍵108', '按鍵109', '按鍵110',
              '按鍵111', '按鍵112', '按鍵113', '按鍵114', '按鍵115', '按鍵116', '按鍵117', '按鍵118', '按鍵119', '按鍵120',
              '按鍵121', '按鍵122', '按鍵123', '按鍵124', '按鍵125', '按鍵126', '按鍵127', '按鍵128', '按鍵129', '按鍵130',
              '按鍵131', '按鍵132', '按鍵133', '按鍵134', '按鍵135', '按鍵136', '按鍵137', '按鍵138', '按鍵139', '按鍵140',
@@ -241,10 +327,10 @@
              'group_2/image156.JPG', 'group_2/image157.JPG', 'group_2/image158.JPG', 'group_2/image159.JPG', 'group_2/image160.JPG'])">第二組</button>
         <button onclick="openNewPage('第三組-PA', 
         ['C346立體倉儲-PA系統圖', 'PKL-檢驗站-PA系統圖', 'SCC-4.5 E-F  4161-4162天車  三階', 'W3三階廠內(F3)PA系統圖', 'W3三階廠內(F3)PA位置圖', 'W3三階轉爐廠間PA系統圖(含位置)', 'W3對4121天車CO系統位置圖', 'W3對4151天車RO系統位置圖', 'W3對4161天車T1系統位置圖', 'W21一二階煉焦廠PA位置圖', 
-         'W21一二階煉焦廠PA系統圖', 'W21三階煉焦廠PA位置圖', 'W21三階煉焦廠PA系統圖', 'W212-3推焦車-PA','W214-3CDQ-PA系統圖','W214-4CDQ-PA系統圖', 'W214-5號導焦-PA', 'W214-6加料車-PA', 'W372-KR-F3-PA系統圖','W373-2RH-PA系統圖', 'W373-3LF-PA系統圖','Y52電氣鍍鋅場(EGL)PA位置圖',
-         'Y52-電氣鍍鋅場(EGL)PA系統圖', 'Y513-PLCM-PA位置圖', 'Y513-PLCM-PA系統圖', 'Y523-2CAL-PA位置圖', 'Y523-2CAL-PA系統圖', '按鍵27','按鍵28','按鍵29','按鍵30', 
+         'W21一二階煉焦廠PA系統圖', 'W21三階煉焦廠PA位置圖', 'W21三階煉焦廠PA系統圖', 'W212-3推焦車-PA','W214-3CDQ-PA系統圖','W214-4CDQ-PA系統圖', 'W214-5號導焦-PA', 'W214-6加料車-PA', 'W372-KR-F3-PA系統圖','W373-2RH-PA系統圖', 'W373-3LF-PA系統圖','Y52電氍鍍鋅場(EGL)PA位置圖',
+         'Y52-電氍鍍鋅場(EGL)PA系統圖', 'Y513-PLCM-PA位置圖', 'Y513-PLCM-PA系統圖', 'Y523-2CAL-PA位置圖', 'Y523-2CAL-PA系統圖', '按鍵27','按鍵28','按鍵29','按鍵30', 
          '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40',
-         '按鍵41', '按鍵42', '按鍵43', '按鍵44', '按鍵45', '按鍵46', '按鍵47', '按鍵48', '按鍵49', '按鍵50',
+         '按41', '按鍵42', '按鍵43', '按鍵44', '按鍵45', '按鍵46', '按鍵47', '按鍵48', '按鍵49', '按鍵50',
          '按鍵51', '按鍵52', '按鍵53', '按鍵54', '按鍵55', '按鍵56', '按鍵57', '按鍵58', '按鍵59', '按鍵60',
          '按鍵61', '按鍵62', '按鍵63', '按鍵64', '按鍵65', '按鍵66', '按鍵67', '按鍵68', '按鍵69', '按鍵70',
          '按鍵71', '按鍵72', '按鍵73', '按鍵74', '按鍵75', '按鍵76', '按鍵77', '按鍵78', '按鍵79', '按鍵80',
@@ -254,11 +340,11 @@
          '按鍵111', '按鍵112', '按鍵113', '按鍵114', '按鍵115', '按鍵116', '按鍵117', '按鍵118', '按鍵119', '按鍵120',
          '按鍵121', '按鍵122', '按鍵123', '按鍵124', '按鍵125', '按鍵126', '按鍵127', '按鍵128', '按鍵129', '按鍵130',
          '按鍵131', '按鍵132', '按鍵133', '按鍵134', '按鍵135', '按鍵136', '按鍵137', '按鍵138', '按鍵139', '按鍵140',
-         '按鍵141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
+         '按���141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
          '按鍵151', '按鍵152', '按鍵153', '按鍵154', '按鍵155', '按鍵156', '按鍵157', '按鍵158', '按鍵159', '按鍵160'], 
         ['group_3/C346立體倉儲高聲電話系統圖.JPG', 'group_3/PKL-檢驗站高聲電話系統圖.JPG', 'group_3/SCC-4.5 E-F  4161-4162天車  三階.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0001.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0002.JPG', 'group_3/W3三階轉爐廠間高聲電話系統圖(含位置).JPG', 'group_3/W3對4121天車CO系統位置圖.JPG', 'group_3/W3對4151天車RO系統位置圖.JPG', 
-         'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系統圖.JPG', 'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG', 'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 
-         'group_3/Y52電氣鍍鋅場(EGL)PA位置圖.JPG', 'group_3/Y52電氣鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/image27.JPG','group_3/image28.JPG','group_3/image29.JPG', 
+         'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系圖.JPG', 'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG', 'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 
+         'group_3/Y52電氍鍍鋅場(EGL)PA位置圖.JPG', 'group_3/Y52電氍鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/image27.JPG','group_3/image28.JPG','group_3/image29.JPG', 
          'group_3/image30.JPG', 'group_3/image31.JPG', 'group_3/image32.JPG', 'group_3/image33.JPG', 'group_3/image34.JPG', 'group_3/image35.JPG', 'group_3/image36.JPG', 
          'group_3/image37.JPG', 'group_3/image38.JPG', 'group_3/image39.JPG', 'group_3/image40.JPG', 'group_3/image41.JPG', 'group_3/image42.JPG', 'group_3/image43.JPG', 
          'group_3/image44.JPG', 'group_3/image45.JPG', 'group_3/image46.JPG', 'group_3/image47.JPG', 'group_3/image48.JPG', 'group_3/image49.JPG', 'group_3/image50.JPG', 
@@ -371,6 +457,34 @@
             } else {
                 alert('未找到符合的圖片');
             }
+        }
+    </script>
+    <script>
+        // 新增 Excel 讀取相關函數
+        function readExcelData() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('請選擇 Excel 檔案');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                telData = XLSX.utils.sheet_to_json(worksheet);
+                
+                alert('Excel 檔案讀取成功！');
+            };
+            
+            reader.onerror = function(e) {
+                alert('讀取檔案時發生錯誤');
+            };
+            
+            reader.readAsArrayBuffer(file);
         }
     </script>
 </body>
