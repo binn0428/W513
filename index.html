@@ -179,6 +179,7 @@
                 const subTelCount = result['副機數量'] || '無資料';
                 const installLocation = result['裝機位置'] || '無資料';
                 const g450Port = result['G450 Port'] || '無資料';
+                const telNumber = result['分機號碼'] || result['分機'] || result['Tel'] || input;
 
                 const resultWindow = window.open("", "_blank");
                 resultWindow.document.write(`
@@ -215,6 +216,7 @@
                     </head>
                     <body>
                         <div class="result-container">
+                            <div class="result-item"><span class="label">分機號碼:</span>${telNumber}</div>
                             <div class="result-item"><span class="label">使用單位:</span>${unit}</div>
                             <div class="result-item"><span class="label">線組編號:</span>${lineGroup}</div>
                             <div class="result-item"><span class="label">分機種類:</span>${telType}</div>
@@ -270,29 +272,29 @@
              '按鍵131', '按鍵132', '按鍵133', '按鍵134', '按鍵135', '按鍵136', '按鍵137', '按鍵138', '按鍵139', '按鍵140',
              '按141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
              '按鍵151', '按鍵152', '按鍵153', '按鍵154', '按鍵155', '按鍵156', '按鍵157', '按鍵158', '按鍵159', '按鍵160'], 
-            ['group_1/image1.JPG', 'group_1/image2.JPG', 'group_1/image3.JPG', 'group_1/image4.JPG', 'group_1/image5.JPG', 'group_1/image6.JPG', 'group_1/image7.JPG', 'group_1/image8.JPG', 
-             'group_1/image9.JPG', 'group_1/image10.JPG', 'group_1/image11.JPG', 'group_1/image12.JPG', 'group_1/image13.JPG', 'group_1/image14.JPG', 'group_1/image15.JPG', 
-             'group_1/image16.JPG', 'group_1/image17.JPG', 'group_1/image18.JPG', 'group_1/image19.JPG', 'group_1/image20.JPG', 'group_1/image21.JPG', 'group_1/image22.JPG', 
-             'group_1/image23.JPG', 'group_1/image24.JPG', 'group_1/image25.JPG', 'group_1/image26.JPG', 'group_1/image27.JPG', 'group_1/image28.JPG', 'group_1/image29.JPG', 
-             'group_1/image30.JPG', 'group_1/image31.JPG', 'group_1/image32.JPG', 'group_1/image33.JPG', 'group_1/image34.JPG', 'group_1/image35.JPG', 'group_1/image36.JPG', 
-             'group_1/image37.JPG', 'group_1/image38.JPG', 'group_1/image39.JPG', 'group_1/image40.JPG', 'group_1/image41.JPG', 'group_1/image42.JPG', 'group_1/image43.JPG', 
-             'group_1/image44.JPG', 'group_1/image45.JPG', 'group_1/image46.JPG', 'group_1/image47.JPG', 'group_1/image48.JPG', 'group_1/image49.JPG', 'group_1/image50.JPG', 
-             'group_1/image51.JPG', 'group_1/image52.JPG', 'group_1/image53.JPG', 'group_1/image54.JPG', 'group_1/image55.JPG', 'group_1/image56.JPG', 'group_1/image57.JPG', 
-             'group_1/image58.JPG', 'group_1/image59.JPG', 'group_1/image60.JPG', 'group_1/image61.JPG', 'group_1/image62.JPG', 'group_1/image63.JPG', 'group_1/image64.JPG', 
-             'group_1/image65.JPG', 'group_1/image66.JPG', 'group_1/image67.JPG', 'group_1/image68.JPG', 'group_1/image69.JPG', 'group_1/image70.JPG', 'group_1/image71.JPG', 
-             'group_1/image72.JPG', 'group_1/image73.JPG', 'group_1/image74.JPG', 'group_1/image75.JPG', 'group_1/image76.JPG', 'group_1/image77.JPG', 'group_1/image78.JPG', 
-             'group_1/image79.JPG', 'group_1/image80.JPG', 'group_1/image81.JPG', 'group_1/image82.JPG', 'group_1/image83.JPG', 'group_1/image84.JPG', 'group_1/image85.JPG', 
-             'group_1/image86.JPG', 'group_1/image87.JPG', 'group_1/image88.JPG', 'group_1/image89.JPG', 'group_1/image90.JPG', 'group_1/image91.JPG', 'group_1/image92.JPG', 
-             'group_1/image93.JPG', 'group_1/image94.JPG', 'group_1/image95.JPG', 'group_1/image96.JPG', 'group_1/image97.JPG', 'group_1/image98.JPG', 'group_1/image99.JPG', 
-             'group_1/image100.JPG', 'group_1/image101.JPG', 'group_1/image102.JPG', 'group_1/image103.JPG', 'group_1/image104.JPG', 'group_1/image105.JPG', 'group_1/image106.JPG', 
-             'group_1/image107.JPG', 'group_1/image108.JPG', 'group_1/image109.JPG', 'group_1/image110.JPG', 'group_1/image111.JPG', 'group_1/image112.JPG', 'group_1/image113.JPG', 
-             'group_1/image114.JPG', 'group_1/image115.JPG', 'group_1/image116.JPG', 'group_1/image117.JPG', 'group_1/image118.JPG', 'group_1/image119.JPG', 'group_1/image120.JPG', 
-             'group_1/image121.JPG', 'group_1/image122.JPG', 'group_1/image123.JPG', 'group_1/image124.JPG', 'group_1/image125.JPG', 'group_1/image126.JPG', 'group_1/image127.JPG', 
-             'group_1/image128.JPG', 'group_1/image129.JPG', 'group_1/image130.JPG', 'group_1/image131.JPG', 'group_1/image132.JPG', 'group_1/image133.JPG', 'group_1/image134.JPG', 
-             'group_1/image135.JPG', 'group_1/image136.JPG', 'group_1/image137.JPG', 'group_1/image138.JPG', 'group_1/image139.JPG', 'group_1/image140.JPG', 'group_1/image141.JPG', 
-             'group_1/image142.JPG', 'group_1/image143.JPG', 'group_1/image144.JPG', 'group_1/image145.JPG', 'group_1/image146.JPG', 'group_1/image147.JPG', 'group_1/image148.JPG', 
-             'group_1/image149.JPG', 'group_1/image150.JPG', 'group_1/image151.JPG', 'group_1/image152.JPG', 'group_1/image153.JPG', 'group_1/image154.JPG', 'group_1/image155.JPG', 
-             'group_1/image156.JPG', 'group_1/image157.JPG', 'group_1/image158.JPG', 'group_1/image159.JPG', 'group_1/image160.JPG'])">第一組</button>
+        ['group_1/image1.JPG', 'group_1/image2.JPG', 'group_1/image3.JPG', 'group_1/image4.JPG', 'group_1/image5.JPG', 'group_1/image6.JPG', 'group_1/image7.JPG', 'group_1/image8.JPG', 
+         'group_1/image9.JPG', 'group_1/image10.JPG', 'group_1/image11.JPG', 'group_1/image12.JPG', 'group_1/image13.JPG', 'group_1/image14.JPG', 'group_1/image15.JPG', 
+         'group_1/image16.JPG', 'group_1/image17.JPG', 'group_1/image18.JPG', 'group_1/image19.JPG', 'group_1/image20.JPG', 'group_1/image21.JPG', 'group_1/image22.JPG', 
+         'group_1/image23.JPG', 'group_1/image24.JPG', 'group_1/image25.JPG', 'group_1/image26.JPG', 'group_1/image27.JPG', 'group_1/image28.JPG', 'group_1/image29.JPG', 
+         'group_1/image30.JPG', 'group_1/image31.JPG', 'group_1/image32.JPG', 'group_1/image33.JPG', 'group_1/image34.JPG', 'group_1/image35.JPG', 'group_1/image36.JPG', 
+         'group_1/image37.JPG', 'group_1/image38.JPG', 'group_1/image39.JPG', 'group_1/image40.JPG', 'group_1/image41.JPG', 'group_1/image42.JPG', 'group_1/image43.JPG', 
+         'group_1/image44.JPG', 'group_1/image45.JPG', 'group_1/image46.JPG', 'group_1/image47.JPG', 'group_1/image48.JPG', 'group_1/image49.JPG', 'group_1/image50.JPG', 
+         'group_1/image51.JPG', 'group_1/image52.JPG', 'group_1/image53.JPG', 'group_1/image54.JPG', 'group_1/image55.JPG', 'group_1/image56.JPG', 'group_1/image57.JPG', 
+         'group_1/image58.JPG', 'group_1/image59.JPG', 'group_1/image60.JPG', 'group_1/image61.JPG', 'group_1/image62.JPG', 'group_1/image63.JPG', 'group_1/image64.JPG', 
+         'group_1/image65.JPG', 'group_1/image66.JPG', 'group_1/image67.JPG', 'group_1/image68.JPG', 'group_1/image69.JPG', 'group_1/image70.JPG', 'group_1/image71.JPG', 
+         'group_1/image72.JPG', 'group_1/image73.JPG', 'group_1/image74.JPG', 'group_1/image75.JPG', 'group_1/image76.JPG', 'group_1/image77.JPG', 'group_1/image78.JPG', 
+         'group_1/image79.JPG', 'group_1/image80.JPG', 'group_1/image81.JPG', 'group_1/image82.JPG', 'group_1/image83.JPG', 'group_1/image84.JPG', 'group_1/image85.JPG', 
+         'group_1/image86.JPG', 'group_1/image87.JPG', 'group_1/image88.JPG', 'group_1/image89.JPG', 'group_1/image90.JPG', 'group_1/image91.JPG', 'group_1/image92.JPG', 
+         'group_1/image93.JPG', 'group_1/image94.JPG', 'group_1/image95.JPG', 'group_1/image96.JPG', 'group_1/image97.JPG', 'group_1/image98.JPG', 'group_1/image99.JPG', 
+         'group_1/image100.JPG', 'group_1/image101.JPG', 'group_1/image102.JPG', 'group_1/image103.JPG', 'group_1/image104.JPG', 'group_1/image105.JPG', 'group_1/image106.JPG', 
+         'group_1/image107.JPG', 'group_1/image108.JPG', 'group_1/image109.JPG', 'group_1/image110.JPG', 'group_1/image111.JPG', 'group_1/image112.JPG', 'group_1/image113.JPG', 
+         'group_1/image114.JPG', 'group_1/image115.JPG', 'group_1/image116.JPG', 'group_1/image117.JPG', 'group_1/image118.JPG', 'group_1/image119.JPG', 'group_1/image120.JPG', 
+         'group_1/image121.JPG', 'group_1/image122.JPG', 'group_1/image123.JPG', 'group_1/image124.JPG', 'group_1/image125.JPG', 'group_1/image126.JPG', 'group_1/image127.JPG', 
+         'group_1/image128.JPG', 'group_1/image129.JPG', 'group_1/image130.JPG', 'group_1/image131.JPG', 'group_1/image132.JPG', 'group_1/image133.JPG', 'group_1/image134.JPG', 
+         'group_1/image135.JPG', 'group_1/image136.JPG', 'group_1/image137.JPG', 'group_1/image138.JPG', 'group_1/image139.JPG', 'group_1/image140.JPG', 'group_1/image141.JPG', 
+         'group_1/image142.JPG', 'group_1/image143.JPG', 'group_1/image144.JPG', 'group_1/image145.JPG', 'group_1/image146.JPG', 'group_1/image147.JPG', 'group_1/image148.JPG', 
+         'group_1/image149.JPG', 'group_1/image150.JPG', 'group_1/image151.JPG', 'group_1/image152.JPG', 'group_1/image153.JPG', 'group_1/image154.JPG', 'group_1/image155.JPG', 
+         'group_1/image156.JPG', 'group_1/image157.JPG', 'group_1/image158.JPG', 'group_1/image159.JPG', 'group_1/image160.JPG'])">第一組</button>
         <button onclick="openNewPage('第二組',
             ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
              '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
@@ -348,7 +350,7 @@
          '按鍵111', '按鍵112', '按鍵113', '按鍵114', '按鍵115', '按鍵116', '按鍵117', '按鍵118', '按鍵119', '按鍵120',
          '按鍵121', '按鍵122', '按鍵123', '按鍵124', '按鍵125', '按鍵126', '按鍵127', '按鍵128', '按鍵129', '按鍵130',
          '按鍵131', '按鍵132', '按鍵133', '按鍵134', '按鍵135', '按鍵136', '按鍵137', '按鍵138', '按鍵139', '按鍵140',
-         '按���141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
+         '按141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
          '按鍵151', '按鍵152', '按鍵153', '按鍵154', '按鍵155', '按鍵156', '按鍵157', '按鍵158', '按鍵159', '按鍵160'], 
         ['group_3/C346立體倉儲高聲電話系統圖.JPG', 'group_3/PKL-檢驗站高聲電話系統圖.JPG', 'group_3/SCC-4.5 E-F  4161-4162天車  三階.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0001.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0002.JPG', 'group_3/W3三階轉爐廠間高聲電話系統圖(含位置).JPG', 'group_3/W3對4121天車CO系統位置圖.JPG', 'group_3/W3對4151天車RO系統位置圖.JPG', 
          'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系圖.JPG', 'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG', 'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 

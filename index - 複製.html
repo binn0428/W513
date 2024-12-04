@@ -154,21 +154,9 @@
                 alert('未找到符合的圖片');
             }
         }
-    </script>
-    <script>
-        // 新增分機搜尋相關函數
-        let telData = null;
 
-        // 載入分機資料
-        fetch('tel/分機資料.xlsx')
-            .then(response => response.arrayBuffer())
-            .then(data => {
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                telData = XLSX.utils.sheet_to_json(worksheet);
-                console.log('分機資料載入成功');
-            })
-            .catch(error => console.error('Error loading tel data:', error));
+        // 宣告全域變數
+        let telData = null;
 
         function searchTel() {
             const input = document.getElementById('telSearchInput').value.trim();
@@ -177,60 +165,85 @@
                 return;
             }
 
-            if (!telData) {
-                alert('請先讀取分機資料');
-                return;
-            }
+            const telNumber = parseInt(input);
+            const result = telData.find(item =>
+                item['分機號碼'] === telNumber ||
+                item['分機'] === telNumber ||
+                item['Tel'] === telNumber
+            );
 
-            const result = telData.find(row => {
-                // 檢查所有可能的欄位名稱
-                const possibleColumns = ['分機號碼', '線組編號', '裝機位置', '電話', '號碼'];
-                return possibleColumns.some(col => row[col] && row[col].toString() === input);
-            });
-            
-            const newWindow = window.open("", "_blank", "width=400,height=300");
-            newWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="zh-Hant">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>分機搜尋結果</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            padding: 20px;
-                            text-align: left;
-                        }
-                        .result {
-                            margin-top: 20px;
-                            font-size: 16px;
-                            color: #333;
-                            line-height: 1.6;
-                        }
-                        .label {
-                            font-weight: bold;
-                            color: #666;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="result">
-                        ${result ? `
-                            <div><span class="label">使用單位：</span>${result['使用單位'] || '無資料'}</div>
-                            <div><span class="label">線組編號：</span>${result['線組編號'] || '無資料'}</div>
-                            <div><span class="label">G450 Port：</span>${result['G450 Port'] || '無資料'}</div>
-                            <div><span class="label">分機種類：</span>${result['分機種類'] || '無資料'}</div>
-                            <div><span class="label">副機數量：</span>${result['副機數量'] || '無資料'}</div>
-                            <div><span class="label">裝機位置：</span>${result['裝機位置'] || '無資料'}</div>
-                            
-                        ` : '未找到符合的分機資料'}
-                    </div>
-                </body>
-                </html>
-            `);
-            newWindow.document.close();
+            if (result) {
+                const unit = result['使用單位'] || result['單位'] || result['部門'] || '無資料';
+                const lineGroup = result['線組編號'] || '無資料';
+                const telType = result['分機種類'] || '無資料';
+                const subTelCount = result['副機數量'] || '無資料';
+                const installLocation = result['裝機位置'] || '無資料';
+                const g450Port = result['G450 Port'] || '無資料';
+
+                const resultWindow = window.open("", "_blank");
+                resultWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="zh-Hant">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>分機搜尋結果</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                                background-color: #f0f0f0;
+                            }
+                            .result-container {
+                                width: 400px;
+                                margin: 0 auto;
+                                background-color: #fff;
+                                padding: 20px;
+                                border-radius: 5px;
+                                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                            }
+                            .result-item {
+                                margin-bottom: 10px;
+                                text-align: left;
+                            }
+                            .label {
+                                font-weight: bold;
+                                margin-right: 10px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="result-container">
+                            <div class="result-item"><span class="label">使用單位:</span>${unit}</div>
+                            <div class="result-item"><span class="label">線組編號:</span>${lineGroup}</div>
+                            <div class="result-item"><span class="label">分機種類:</span>${telType}</div>
+                            <div class="result-item"><span class="label">副機數量:</span>${subTelCount}</div>
+                            <div class="result-item"><span class="label">裝機位置:</span>${installLocation}</div>
+                            <div class="result-item"><span class="label">G450 Port:</span>${g450Port}</div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                resultWindow.document.close();
+            } else {
+                alert('未找到符合的分機資料');
+            }
         }
+
+        // 頁面載入時自動讀取分機資料
+        fetch('./tel/分機資料.xlsx')
+            .then(response => response.arrayBuffer())
+            .then(data => {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                telData = XLSX.utils.sheet_to_json(worksheet);
+                console.log('分機資料載入成功', telData); // 添加日誌
+            })
+            .catch(error => {
+                alert('讀取分機資料時發生錯誤，請確認檔案位置是否正確');
+                console.error('讀取分機資料時發生錯誤:', error);
+            });
     </script>
 </head>
 <body>
@@ -240,11 +253,6 @@
         <!-- 新增分機搜尋區域 -->
         <input type="text" id="telSearchInput" placeholder="搜尋分機..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
         <button onclick="searchTel()" style="background-color: #FF6B6B; color: white; font-weight: bold;">分機搜尋</button>
-        <!-- 新增 Excel 檔案上傳區域 -->
-        <div style="margin-top: 10px;">
-            <input type="file" id="excelFile" accept=".xlsx, .xls" style="font-size: 16px;" />
-            <button onclick="readExcelData()" style="background-color: #4CAF50; color: white; font-weight: bold;">讀取 Excel</button>
-        </div>
         <button onclick="openNewPage('第一組', 
             ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
              '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
@@ -260,7 +268,7 @@
              '按鍵111', '按鍵112', '按鍵113', '按鍵114', '按鍵115', '按鍵116', '按鍵117', '按鍵118', '按鍵119', '按鍵120',
              '按鍵121', '按鍵122', '按鍵123', '按鍵124', '按鍵125', '按鍵126', '按鍵127', '按鍵128', '按鍵129', '按鍵130',
              '按鍵131', '按鍵132', '按鍵133', '按鍵134', '按鍵135', '按鍵136', '按鍵137', '按鍵138', '按鍵139', '按鍵140',
-             '按鍵141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
+             '按141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
              '按鍵151', '按鍵152', '按鍵153', '按鍵154', '按鍵155', '按鍵156', '按鍵157', '按鍵158', '按鍵159', '按鍵160'], 
             ['group_1/image1.JPG', 'group_1/image2.JPG', 'group_1/image3.JPG', 'group_1/image4.JPG', 'group_1/image5.JPG', 'group_1/image6.JPG', 'group_1/image7.JPG', 'group_1/image8.JPG', 
              'group_1/image9.JPG', 'group_1/image10.JPG', 'group_1/image11.JPG', 'group_1/image12.JPG', 'group_1/image13.JPG', 'group_1/image14.JPG', 'group_1/image15.JPG', 
@@ -457,34 +465,6 @@
             } else {
                 alert('未找到符合的圖片');
             }
-        }
-    </script>
-    <script>
-        // 新增 Excel 讀取相關函數
-        function readExcelData() {
-            const fileInput = document.getElementById('excelFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert('請選擇 Excel 檔案');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                telData = XLSX.utils.sheet_to_json(worksheet);
-                
-                alert('Excel 檔案讀取成功！');
-            };
-            
-            reader.onerror = function(e) {
-                alert('讀取檔案時發生錯誤');
-            };
-            
-            reader.readAsArrayBuffer(file);
         }
     </script>
 </body>
