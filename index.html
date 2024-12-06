@@ -266,7 +266,7 @@
         }
 
         // 頁面載入時自動讀取分機資料
-        fetch('./tel/分機資料.xlsx')
+        fetch('./tel/電話資料.xlsx')
             .then(response => response.arrayBuffer())
             .then(data => {
                 const workbook = XLSX.read(data, { type: 'array' });
