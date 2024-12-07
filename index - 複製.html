@@ -24,20 +24,51 @@
             align-items: center; /* 置中對齊 */
         }
         button {
-            margin: 10px 0; /* 垂直間距 */
+            margin: 10px 0;
             padding: 10px 20px;
             font-size: 25px;
-            background-color: blue; /* 藍底 */
-            color: yellow; /* 黃字 */
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            box-shadow: 0 5px #666; /* 添加立體感 */
-            transition: all 0.3s ease; /* 添加過渡效果 */
+            box-shadow: 0 6px #999;
+            transition: all 0.3s ease;
+            position: relative;
+            top: 0;
+            background: linear-gradient(to bottom, #4169E1, #0000CD);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         }
         button:hover {
-            opacity: 0.8; /* 滑鼠懸停效果 */
-            transform: translateY(5px); /* 按壓感 */
+            background: linear-gradient(to bottom, #4169E1, #1E90FF);
+        }
+        button:active {
+            top: 5px;
+            box-shadow: 0 1px #666;
+            background: linear-gradient(to bottom, #0000CD, #4169E1);
+        }
+        .option {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #000;
+            margin: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 6px #999;
+            transition: all 0.3s ease;
+            position: relative;
+            top: 0;
+            background: linear-gradient(to bottom, #90EE90, #32CD32);
+        }
+        .option:hover {
+            background: linear-gradient(to bottom, #90EE90, #1E90FF);
+        }
+        .option:active {
+            top: 5px;
+            box-shadow: 0 1px #666;
+            background: linear-gradient(to bottom, #32CD32, #90EE90);
         }
     </style>
     <script>
@@ -235,7 +266,7 @@
         }
 
         // 頁面載入時自動讀取分機資料
-        fetch('./tel/分機資料.xlsx')
+        fetch('./tel/電話資料.xlsx')
             .then(response => response.arrayBuffer())
             .then(data => {
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -252,10 +283,10 @@
 <body>
     <div class="container">
         <input type="text" id="searchInput" placeholder="搜尋圖片..." style="font-size: 20px; width: 300px;" />
-        <button onclick="searchImages()" style="background-color: #32CD32; color: black; font-weight: bold;">天車資料搜尋</button>
+        <button onclick="searchImages()" style="background: linear-gradient(to bottom, #32CD32, #228B22); color: yellow; font-weight: bold; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);">天車資料搜尋</button>
         <!-- 新增分機搜尋區域 -->
         <input type="text" id="telSearchInput" placeholder="搜尋分機..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
-        <button onclick="searchTel()" style="background-color: #FF6B6B; color: white; font-weight: bold;">分機搜尋</button>
+        <button onclick="searchTel()" style="background: linear-gradient(to bottom, #FF6B6B, #CD5C5C); color: white; font-weight: bold;">分機資料搜尋</button>
         <button onclick="openNewPage('第一組', 
             ['按鍵1', '按鍵2', '按鍵3', '按鍵4', '按鍵5', '按鍵6', '按鍵7', '按鍵8', '按鍵9', '按鍵10', 
              '按鍵11', '按鍵12', '按鍵13', '按鍵14', '按鍵15', '按鍵16', '按鍵17', '按鍵18', '按鍵19', '按鍵20', 
@@ -338,8 +369,8 @@
              'group_2/image156.JPG', 'group_2/image157.JPG', 'group_2/image158.JPG', 'group_2/image159.JPG', 'group_2/image160.JPG'])">第二組</button>
         <button onclick="openNewPage('第三組-PA', 
         ['C346立體倉儲-PA系統圖', 'PKL-檢驗站-PA系統圖', 'SCC-4.5 E-F  4161-4162天車  三階', 'W3三階廠內(F3)PA系統圖', 'W3三階廠內(F3)PA位置圖', 'W3三階轉爐廠間PA系統圖(含位置)', 'W3對4121天車CO系統位置圖', 'W3對4151天車RO系統位置圖', 'W3對4161天車T1系統位置圖', 'W21一二階煉焦廠PA位置圖', 
-         'W21一二階煉焦廠PA系統圖', 'W21三階煉焦廠PA位置圖', 'W21三階煉焦廠PA系統圖', 'W212-3推焦車-PA','W214-3CDQ-PA系統圖','W214-4CDQ-PA系統圖', 'W214-5號導焦-PA', 'W214-6加料車-PA', 'W372-KR-F3-PA系統圖','W373-2RH-PA系統圖', 'W373-3LF-PA系統圖','Y52電氍鍍鋅場(EGL)PA位置圖',
-         'Y52-電氍鍍鋅場(EGL)PA系統圖', 'Y513-PLCM-PA位置圖', 'Y513-PLCM-PA系統圖', 'Y523-2CAL-PA位置圖', 'Y523-2CAL-PA系統圖', '按鍵27','按鍵28','按鍵29','按鍵30', 
+         'W21一二階煉焦廠PA系統圖', 'W21三階煉焦廠PA位置圖', 'W21三階煉焦廠PA系統圖', 'W212-3推焦車-PA','W214-3CDQ-PA系統圖','W214-4CDQ-PA系統圖', 'W214-5號導焦-PA', 'W214-6加料車-PA', 'W372-KR-F3-PA系統圖','W373-2RH-PA系統圖', 'W373-3LF-PA系統圖','Y52電氣鍍鋅場(EGL)PA位置圖',
+         'Y52-電氣鍍鋅場(EGL)PA系統圖', 'Y513-PLCM-PA位置圖', 'Y513-PLCM-PA系統圖', 'Y523-2CAL-PA位置圖', 'Y523-2CAL-PA系統圖', '按鍵27','按鍵28','按鍵29','按鍵30', 
          '按鍵31', '按鍵32', '按鍵33', '按鍵34', '按鍵35', '按鍵36', '按鍵37', '按鍵38', '按鍵39', '按鍵40',
          '按41', '按鍵42', '按鍵43', '按鍵44', '按鍵45', '按鍵46', '按鍵47', '按鍵48', '按鍵49', '按鍵50',
          '按鍵51', '按鍵52', '按鍵53', '按鍵54', '按鍵55', '按鍵56', '按鍵57', '按鍵58', '按鍵59', '按鍵60',
@@ -354,8 +385,8 @@
          '按141', '按鍵142', '按鍵143', '按鍵144', '按鍵145', '按鍵146', '按鍵147', '按鍵148', '按鍵149', '按鍵150',
          '按鍵151', '按鍵152', '按鍵153', '按鍵154', '按鍵155', '按鍵156', '按鍵157', '按鍵158', '按鍵159', '按鍵160'], 
         ['group_3/C346立體倉儲高聲電話系統圖.JPG', 'group_3/PKL-檢驗站高聲電話系統圖.JPG', 'group_3/SCC-4.5 E-F  4161-4162天車  三階.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0001.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0002.JPG', 'group_3/W3三階轉爐廠間高聲電話系統圖(含位置).JPG', 'group_3/W3對4121天車CO系統位置圖.JPG', 'group_3/W3對4151天車RO系統位置圖.JPG', 
-         'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系圖.JPG', 'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG', 'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 
-         'group_3/Y52電氍鍍鋅場(EGL)PA位置圖.JPG', 'group_3/Y52電氍鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/image27.JPG','group_3/image28.JPG','group_3/image29.JPG', 
+         'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系統圖.JPG', 'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG', 'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 
+         'group_3/Y52電氣鍍鋅場(EGL)PA位置圖.JPG', 'group_3/Y52電氣鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/image27.JPG','group_3/image28.JPG','group_3/image29.JPG', 
          'group_3/image30.JPG', 'group_3/image31.JPG', 'group_3/image32.JPG', 'group_3/image33.JPG', 'group_3/image34.JPG', 'group_3/image35.JPG', 'group_3/image36.JPG', 
          'group_3/image37.JPG', 'group_3/image38.JPG', 'group_3/image39.JPG', 'group_3/image40.JPG', 'group_3/image41.JPG', 'group_3/image42.JPG', 'group_3/image43.JPG', 
          'group_3/image44.JPG', 'group_3/image45.JPG', 'group_3/image46.JPG', 'group_3/image47.JPG', 'group_3/image48.JPG', 'group_3/image49.JPG', 'group_3/image50.JPG', 
