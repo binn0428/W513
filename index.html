@@ -87,10 +87,11 @@
                             flex-wrap: wrap;
                             justify-content: center;
                             align-items: center;
-                            height: 100vh;
+                            min-height: 100vh;
                             margin: 0;
+                            padding: 20px;
                             font-family: Arial, sans-serif;
-                            
+                            box-sizing: border-box;
                         }
                         .option {
                             width: 100px;
@@ -102,17 +103,38 @@
                             margin: 5px;
                             font-size: 18px;
                             cursor: pointer;
-                            background-color: rgba(57, 255, 20, 0.8); /* 綠底 */
-                            color: black; /* 黑字 */
-                            transition: all 0.3s ease; /* 添加過渡效果 */
-                            box-shadow: 0 5px #666; /* 添加立體感 */
-                            outline: none; /* 移除按壓時的藍色輪廓 */
+                            background-color: rgba(57, 255, 20, 0.8);
+                            color: black;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 5px #666;
+                            outline: none;
+                        }
+                        .option:hover {
+                            background-color: rgba(57, 255, 20, 1);
+                        }
+                        /* 新增圖片顯示視窗的樣式 */
+                        .image-window {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: white;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 1000;
+                        }
+                        .image-window img {
+                            max-width: 100%;
+                            max-height: 100%;
+                            object-fit: contain;
                         }
                     </style>
                 </head>
                 <body>
-                    ${Array.from({ length: 160 }, (_, i) => `
-                        <div class="option" onclick="window.open('${imagePaths[i]}', '_blank')">
+                    ${Array.from({ length: buttonNames.length }, (_, i) => `
+                        <div class="option" onclick="window.open('${imagePaths[i]}', '_blank', 'width=800,height=600').document.write('<html><head><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:white;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src=\\'${imagePaths[i]}\\' /></body></html>')">
                             ${buttonNames[i]}
                         </div>
                     `).join('')}
@@ -166,7 +188,7 @@
             ];
             const filteredImages = images.filter(image => image.toLowerCase().includes(input));
             if (filteredImages.length > 0) {
-                const newWindow = window.open("", "_blank", "noopener,noreferrer");
+                const newWindow = window.open("", "_blank");
                 newWindow.document.write(`
                     <!DOCTYPE html>
                     <html lang="zh-Hant">
@@ -174,9 +196,38 @@
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
                         <title>搜尋結果</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                min-height: 100vh;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                background: #f0f0f0;
+                            }
+                            .image-container {
+                                width: 100%;
+                                max-width: 100vw;
+                                padding: 20px;
+                                box-sizing: border-box;
+                            }
+                            img {
+                                width: 100%;
+                                height: auto;
+                                max-height: 90vh;
+                                object-fit: contain;
+                                display: block;
+                                margin: 10px auto;
+                                background: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                            }
+                        </style>
                     </head>
                     <body>
-                        ${filteredImages.map(img => `<img src="${img}" style="max-width: 100%; height: auto;" />`).join('')}
+                        <div class="image-container">
+                            ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
+                        </div>
                     </body>
                     </html>
                 `);
@@ -266,7 +317,7 @@
         }
 
         // 頁面載入時自動讀取分機資料
-        fetch('./tel/分機資料.xlsx')
+        fetch('./tel/電話資料.xlsx')
             .then(response => response.arrayBuffer())
             .then(data => {
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -489,9 +540,38 @@
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
                         <title>搜尋結果</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                min-height: 100vh;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                background: #f0f0f0;
+                            }
+                            .image-container {
+                                width: 100%;
+                                max-width: 100vw;
+                                padding: 20px;
+                                box-sizing: border-box;
+                            }
+                            img {
+                                width: 100%;
+                                height: auto;
+                                max-height: 90vh;
+                                object-fit: contain;
+                                display: block;
+                                margin: 10px auto;
+                                background: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                            }
+                        </style>
                     </head>
                     <body>
-                        ${filteredImages.map(img => `<img src="${img}" style="max-width: 100%; height: auto;" />`).join('')}
+                        <div class="image-container">
+                            ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
+                        </div>
                     </body>
                     </html>
                 `);
