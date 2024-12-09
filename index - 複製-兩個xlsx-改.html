@@ -239,7 +239,6 @@
 
         // 宣告全域變數
         let telData = null;
-        let unitData = null;
 
         function searchTel() {
             const input = document.getElementById('telSearchInput').value.trim();
@@ -322,78 +321,7 @@
                 alert('未找到符合的分機資料');
             }
         }
-        const result = unitData.find(item =>
-                item['分機號碼'] === telNumber ||
-                item['分機'] === telNumber ||
-                item['Tel'] === telNumber
-            );
 
-            if (result) {
-                const unit = result['使用單位'] || result['單位'] || result['部門'] || '無資料';
-                const lineGroup = result['線組編號'] || '無資料';
-                const telType = result['分機種類'] || '無資料';
-                const subTelCount = result['副機數量'] || '無資料';
-                const installLocation = result['裝機位置'] || '無資料';
-                const g450Port = result['G450 Port'] || '無資料';
-                const telNumber = result['分機號碼'] || result['分機'] || result['Tel'] || input;
-                const didNumber = result['對應DID號碼'] || '無資料';
-                const relocationRecord = result['拆遷記錄'] || '無資料';
-                const remark = result['備註'] || '無資料';
-
-                const resultWindow = window.open("", "_blank");
-                resultWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html lang="zh-Hant">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>分機搜尋結果</title>
-                        <style>
-                            body {
-                                font-family: Arial, sans-serif;
-                                margin: 0;
-                                padding: 20px;
-                                background-color: #f0f0f0;
-                            }
-                            .result-container {
-                                width: 400px;
-                                margin: 0 auto;
-                                background-color: #fff;
-                                padding: 20px;
-                                border-radius: 5px;
-                                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                            }
-                            .result-item {
-                                margin-bottom: 10px;
-                                text-align: left;
-                            }
-                            .label {
-                                font-weight: bold;
-                                margin-right: 10px;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="result-container">
-                            <div class="result-item"><span class="label">分機號碼:</span>${telNumber}</div>
-                            <div class="result-item"><span class="label">使用單位:</span>${unit}</div>
-                            <div class="result-item"><span class="label">線組編號:</span>${lineGroup}</div>
-                            <div class="result-item"><span class="label">G450 Port:</span>${g450Port}</div>
-                            <div class="result-item"><span class="label">分機種類:</span>${telType}</div>
-                            <div class="result-item"><span class="label">副機數量:</span>${subTelCount}</div>
-                            <div class="result-item"><span class="label">DID號碼:</span>${didNumber}</div>
-                            <div class="result-item"><span class="label">裝機位置:</span>${installLocation}</div>
-                            <div class="result-item"><span class="label">拆遷紀錄:</span>${relocationRecord}</div>
-                            <div class="result-item"><span class="label">備註:</span>${remark}</div>
-                            
-                        </div>
-                    </body>
-                    </html>
-                `);
-                resultWindow.document.close();
-            } else {
-                alert('未找到符合的分機資料');
-            }
         // 頁面載入時自動讀取分機資料
         fetch('./tel/電話資料.xlsx')
             .then(response => response.arrayBuffer())
