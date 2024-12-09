@@ -335,6 +335,16 @@
                 alert('讀取分機資料時發生錯誤，請確認檔案位置是否正確');
                 console.error('讀取分機資料時發生錯誤:', error);
             });
+
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault(); // 禁止右鍵菜單
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
+            }
+        });
     </script>
 </head>
 <body>
