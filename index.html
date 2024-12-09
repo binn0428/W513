@@ -323,17 +323,24 @@
         }
 
         // 頁面載入時自動讀取分機資料
-        fetch('./tel/電話資料.xlsx')
-            .then(response => response.arrayBuffer())
-            .then(data => {
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                telData = XLSX.utils.sheet_to_json(worksheet);
-                console.log('分機資料載入成功', telData); // 添加日誌
-            })
-            .catch(error => {
-                alert('讀取分機資料時發生錯誤，請確認檔案位置是否正確');
-                console.error('讀取分機資料時發生錯誤:', error);
+        Promise.all([
+            fetch('./tel/電話資料.xlsx').then(response => response.arrayBuffer()),
+            fetch('./tel/調度資料.xlsx').then(response => response.arrayBuffer())
+        ])
+        .then(([data1, data2]) => {
+            const workbook1 = XLSX.read(data1, { type: 'array' });
+            const worksheet1 = workbook1.Sheets[workbook1.SheetNames[0]];
+            const telData1 = XLSX.utils.sheet_to_json(worksheet1);
+            console.log('分機資料1載入成功', telData1); // 添加日誌
+
+            const workbook2 = XLSX.read(data2, { type: 'array' });
+            const worksheet2 = workbook2.Sheets[workbook2.SheetNames[0]];
+            const telData2 = XLSX.utils.sheet_to_json(worksheet2);
+            console.log('分機資料2載入成功', telData2); // 添加日誌
+        })
+        .catch(error => {
+            alert('讀取分機資料時發生錯誤，請確認檔案位置是否正確');
+            console.error('讀取分機資料時發生錯誤:', error);
             });
     </script>
 </head>
