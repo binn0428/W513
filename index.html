@@ -206,21 +206,6 @@
                                 align-items: center;
                                 background: #f0f0f0;
                             }
-                            .back-button {
-                                position: fixed;
-                                top: 20px;
-                                left: 20px;
-                                padding: 10px 20px;
-                                background: #007bff;
-                                color: white;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                z-index: 1000;
-                            }
-                            .back-button:hover {
-                                background: #0056b3;
-                            }
                             .image-container {
                                 width: 100%;
                                 max-width: 100vw;
@@ -240,7 +225,6 @@
                         </style>
                     </head>
                     <body>
-                        <button class="back-button" onclick="window.close()">返回上一頁</button>
                         <div class="image-container">
                             ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
                         </div>
@@ -281,36 +265,6 @@
                 const didNumber = result['對應DID號碼'] || '無資料';
                 const relocationRecord = result['拆遷記錄'] || '無資料';
                 const remark = result['備註'] || '無資料';
-
-                // 準備 Telegram 訊息內容
-                const telegramMessage = `
-分機搜尋結果:
-分機號碼: ${telNumber}
-使用單位: ${unit}
-線組編號: ${lineGroup}
-G450 Port: ${g450Port}
-分機種類: ${telType}
-副機數量: ${subTelCount}
-DID號碼: ${didNumber}
-裝機位置: ${installLocation}
-拆遷紀錄: ${relocationRecord}
-備註: ${remark}
-`;
-
-                // 發送到 Telegram (使用 fetch)
-                const botToken = '5807495427:AAFnV9D57uyxGpFffOXAh-fjG8TncyAAZ-I';
-                const chatId = '-4786558964';
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: telegramMessage,
-                        parse_mode: 'HTML'
-                    })
-                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
                 const resultWindow = window.open("", "_blank");
                 resultWindow.document.write(`
