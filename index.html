@@ -345,6 +345,11 @@
                 return;
             }
 
+            if (!telData || telData.length === 0) {
+                alert('電話資料尚未載入完成，請稍後再試');
+                return;
+            }
+
             const results = telData.filter(item => {
                 return Object.values(item).some(value => {
                     if (value === null || value === undefined) return false;
@@ -387,7 +392,18 @@
                 if (results.length > 2) {
                     // 根據匹配欄位分類
                     const groupedResults = {};
-                    const fields = ['分機號碼', '使用單位', '線組編號', 'G450 Port', '分機種類', '副機數量', 'DID號碼', '裝機位置', '拆遷紀錄', '備註'];
+                    const fields = [
+                        '分機號碼',
+                        '使用單位',
+                        '線組編號',
+                        'G450 Port',
+                        '分機種類',
+                        '副機數量',
+                        'DID號碼',
+                        '裝機位置',
+                        '拆遷紀錄',
+                        '備註'
+                    ];
                     
                     results.forEach(result => {
                         fields.forEach(field => {
@@ -707,7 +723,17 @@
                 if (results.length > 2) {
                     // 根據匹配欄位分類
                     const groupedResults = {};
-                    const fields = ['分機號碼', 'C端子位置', 'LENS', '線組編號(機房)', '線組編號(現場)', '使用單位', '裝機位置', '副機數量', '連絡電話'];
+                    const fields = [
+                        '分機號碼',
+                        'C端子位置',
+                        'LENS',
+                        '線組編號(機房)',
+                        '線組編號(現場)',
+                        '使用單位',
+                        '裝機位置',
+                        '副機數量',
+                        '連絡電話'
+                    ];
                     
                     results.forEach(result => {
                         fields.forEach(field => {
