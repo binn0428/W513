@@ -358,8 +358,42 @@
             });
 
             if (results.length > 0) {
+                // 定義欄位順序
+                const fields = [
+                    '分機號碼',
+                    '使用單位',
+                    '線組編號',
+                    'G450 Port',
+                    '分機種類',
+                    '副機數量',
+                    'DID號碼',
+                    '裝機位置',
+                    '拆遷紀錄',
+                    '備註'
+                ];
+
+                // 按欄位順序計算每個欄位的匹配數量
+                const matchCounts = {};
+                const matchedResults = {};
+                
+                fields.forEach(field => {
+                    const matches = results.filter(item => {
+                        const value = field === 'DID號碼' ? (item['對應DID號碼'] || '') : (item[field] || '');
+                        return value.toString().toLowerCase().includes(input.toLowerCase());
+                    });
+                    if (matches.length > 0) {
+                        matchCounts[field] = matches.length;
+                        matchedResults[field] = matches;
+                    }
+                });
+
                 // 準備所有結果的 Telegram 訊息內容
                 let telegramMessage = '分機搜尋結果:\n';
+                telegramMessage += `總匹配數量: ${results.length}筆\n`;
+                Object.entries(matchCounts).forEach(([field, count]) => {
+                    telegramMessage += `${field}欄位符合: ${count}筆\n`;
+                });
+
                 results.forEach((result, index) => {
                     telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
                     telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
@@ -388,81 +422,7 @@
                     })
                 }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
-                const resultTemplate = (result) => `
-                    <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                        <div class="result-item">
-                            <span class="label">分機號碼：</span>
-                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">使用單位：</span>
-                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">線組編號：</span>
-                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">G450 Port：</span>
-                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">分機種類：</span>
-                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">副機數量：</span>
-                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">DID號碼：</span>
-                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">裝機位置：</span>
-                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">拆遷紀錄：</span>
-                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">備註：</span>
-                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                        </div>
-                    </div>
-                `;
-
                 if (results.length > 2) {
-                    // 根據匹配欄位分類
-                    const groupedResults = {};
-                    const fields = [
-                        '分機號碼',
-                        '使用單位',
-                        '線組編號',
-                        'G450 Port',
-                        '分機種類',
-                        '副機數量',
-                        'DID號碼',
-                        '裝機位置',
-                        '拆遷紀錄',
-                        '備註'
-                    ];
-                    
-                    results.forEach(result => {
-                        fields.forEach(field => {
-                            const value = result[field];
-                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                                if (!groupedResults[field]) {
-                                    groupedResults[field] = [];
-                                }
-                                if (!groupedResults[field].includes(result)) {
-                                    groupedResults[field].push(result);
-                                }
-                            }
-                        });
-                    });
-
                     const resultWindow = window.open("", "_blank");
                     resultWindow.document.write(`
                         <!DOCTYPE html>
@@ -500,6 +460,18 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .match-counts {
+                                    background-color: #e9ecef;
+                                    padding: 15px;
+                                    border-radius: 5px;
+                                    margin-bottom: 20px;
+                                }
+                                .match-count-item {
+                                    margin: 5px 0;
+                                    padding: 5px;
+                                    background-color: #fff;
+                                    border-radius: 3px;
+                                }
                                 .result-details {
                                     display: none;
                                     margin-top: 10px;
@@ -534,14 +506,27 @@
                                 <div class="search-summary">
                                     搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                                 </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
-                                        <div class="result-details">
-                                            ${items.map(result => resultTemplate(result)).join('')}
+                                <div class="match-counts">
+                                    <h3>符合欄位統計：</h3>
+                                    ${Object.entries(matchCounts).map(([field, count]) => `
+                                        <div class="match-count-item">
+                                            ${field}欄位符合: ${count}筆
                                         </div>
-                                    </div>
-                                `).join('')}
+                                    `).join('')}
+                                </div>
+                                ${fields.map(field => {
+                                    if (matchedResults[field]) {
+                                        return `
+                                            <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                                <h3>符合「${field}」欄位 (${matchedResults[field].length} 筆結果)</h3>
+                                                <div class="result-details">
+                                                    ${matchedResults[field].map(result => resultTemplate(result)).join('')}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    return '';
+                                }).join('')}
                             </div>
                         </body>
                         </html>
@@ -601,6 +586,18 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .match-counts {
+                                    background-color: #e9ecef;
+                                    padding: 15px;
+                                    border-radius: 5px;
+                                    margin-bottom: 20px;
+                                }
+                                .match-count-item {
+                                    margin: 5px 0;
+                                    padding: 5px;
+                                    background-color: #fff;
+                                    border-radius: 3px;
+                                }
                                 .highlight {
                                     background-color: #ffeb3b;
                                     padding: 2px 4px;
@@ -613,6 +610,14 @@
                             <div class="results-container">
                                 <div class="search-summary">
                                     搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                <div class="match-counts">
+                                    <h3>符合欄位統計：</h3>
+                                    ${Object.entries(matchCounts).map(([field, count]) => `
+                                        <div class="match-count-item">
+                                            ${field}欄位符合: ${count}筆
+                                        </div>
+                                    `).join('')}
                                 </div>
                                 ${results.map((result, index) => `
                                     <div class="result-card">
@@ -651,8 +656,41 @@
             });
 
             if (results.length > 0) {
+                // 定義欄位順序
+                const fields = [
+                    '分機號碼',
+                    'C端子位置',
+                    'LENS',
+                    '線組編號(機房)',
+                    '線組編號(現場)',
+                    '使用單位',
+                    '裝機位置',
+                    '副機數量',
+                    '連絡電話'
+                ];
+
+                // 按欄位順序計算每個欄位的匹配數量
+                const matchCounts = {};
+                const matchedResults = {};
+                
+                fields.forEach(field => {
+                    const matches = results.filter(item => {
+                        const value = field === 'DID號碼' ? (item['對應DID號碼'] || '') : (item[field] || '');
+                        return value.toString().toLowerCase().includes(input.toLowerCase());
+                    });
+                    if (matches.length > 0) {
+                        matchCounts[field] = matches.length;
+                        matchedResults[field] = matches;
+                    }
+                });
+
                 // 準備所有結果的 Telegram 訊息內容
                 let telegramMessage = '調度電話搜尋結果:\n';
+                telegramMessage += `總匹配數量: ${results.length}筆\n`;
+                Object.entries(matchCounts).forEach(([field, count]) => {
+                    telegramMessage += `${field}欄位符合: ${count}筆\n`;
+                });
+
                 results.forEach((result, index) => {
                     telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
                     telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
@@ -680,76 +718,7 @@
                     })
                 }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
-                const dispatchTemplate = (result) => `
-                    <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                        <div class="result-item">
-                            <span class="label">分機號碼：</span>
-                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">C端子位置：</span>
-                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">LENS：</span>
-                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">線組編號(機房)：</span>
-                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">線組編號(現場)：</span>
-                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">使用單位：</span>
-                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">裝機位置：</span>
-                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">副機數量：</span>
-                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="label">連絡電話：</span>
-                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                        </div>
-                    </div>
-                `;
-
                 if (results.length > 2) {
-                    // 根據匹配欄位分類
-                    const groupedResults = {};
-                    const fields = [
-                        '分機號碼',
-                        'C端子位置',
-                        'LENS',
-                        '線組編號(機房)',
-                        '線組編號(現場)',
-                        '使用單位',
-                        '裝機位置',
-                        '副機數量',
-                        '連絡電話'
-                    ];
-                    
-                    results.forEach(result => {
-                        fields.forEach(field => {
-                            const value = result[field];
-                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                                if (!groupedResults[field]) {
-                                    groupedResults[field] = [];
-                                }
-                                if (!groupedResults[field].includes(result)) {
-                                    groupedResults[field].push(result);
-                                }
-                            }
-                        });
-                    });
-
                     const resultWindow = window.open("", "_blank");
                     resultWindow.document.write(`
                         <!DOCTYPE html>
@@ -787,6 +756,18 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .match-counts {
+                                    background-color: #e9ecef;
+                                    padding: 15px;
+                                    border-radius: 5px;
+                                    margin-bottom: 20px;
+                                }
+                                .match-count-item {
+                                    margin: 5px 0;
+                                    padding: 5px;
+                                    background-color: #fff;
+                                    border-radius: 3px;
+                                }
                                 .result-details {
                                     display: none;
                                     margin-top: 10px;
@@ -821,14 +802,27 @@
                                 <div class="search-summary">
                                     搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                                 </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
-                                        <div class="result-details">
-                                            ${items.map(result => dispatchTemplate(result)).join('')}
+                                <div class="match-counts">
+                                    <h3>符合欄位統計：</h3>
+                                    ${Object.entries(matchCounts).map(([field, count]) => `
+                                        <div class="match-count-item">
+                                            ${field}欄位符合: ${count}筆
                                         </div>
-                                    </div>
-                                `).join('')}
+                                    `).join('')}
+                                </div>
+                                ${fields.map(field => {
+                                    if (matchedResults[field]) {
+                                        return `
+                                            <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                                <h3>符合「${field}」欄位 (${matchedResults[field].length} 筆結果)</h3>
+                                                <div class="result-details">
+                                                    ${matchedResults[field].map(result => resultTemplate(result)).join('')}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    return '';
+                                }).join('')}
                             </div>
                         </body>
                         </html>
@@ -888,6 +882,18 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .match-counts {
+                                    background-color: #e9ecef;
+                                    padding: 15px;
+                                    border-radius: 5px;
+                                    margin-bottom: 20px;
+                                }
+                                .match-count-item {
+                                    margin: 5px 0;
+                                    padding: 5px;
+                                    background-color: #fff;
+                                    border-radius: 3px;
+                                }
                                 .highlight {
                                     background-color: #ffeb3b;
                                     padding: 2px 4px;
@@ -901,10 +907,18 @@
                                 <div class="search-summary">
                                     搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                                 </div>
+                                <div class="match-counts">
+                                    <h3>符合欄位統計：</h3>
+                                    ${Object.entries(matchCounts).map(([field, count]) => `
+                                        <div class="match-count-item">
+                                            ${field}欄位符合: ${count}筆
+                                        </div>
+                                    `).join('')}
+                                </div>
                                 ${results.map((result, index) => `
                                     <div class="result-card">
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
-                                        ${dispatchTemplate(result)}
+                                        ${resultTemplate(result)}
                                     </div>
                                 `).join('')}
                             </div>
