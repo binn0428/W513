@@ -383,122 +383,265 @@
                     })
                 }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
-                const resultWindow = window.open("", "_blank");
-                resultWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html lang="zh-Hant">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>分機搜尋結果</title>
-                        <style>
-                            body {
-                                font-family: Arial, sans-serif;
-                                margin: 0;
-                                padding: 20px;
-                                background-color: #f0f0f0;
-                            }
-                            .results-container {
-                                max-width: 800px;
-                                margin: 0 auto;
-                            }
-                            .result-card {
-                                background-color: #fff;
-                                padding: 20px;
-                                border-radius: 5px;
-                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                margin-bottom: 20px;
-                            }
-                            .result-item {
-                                display: flex;
-                                padding: 8px 0;
-                                border-bottom: 1px solid #eee;
-                            }
-                            .label {
-                                font-weight: bold;
-                                width: 120px;
-                                color: #333;
-                            }
-                            .value {
-                                flex-grow: 1;
-                                color: #666;
-                            }
-                            .result-header {
-                                background-color: #4169E1;
-                                color: white;
-                                padding: 10px;
-                                border-radius: 5px 5px 0 0;
-                                margin-bottom: 10px;
-                            }
-                            .search-summary {
-                                text-align: center;
-                                margin-bottom: 20px;
-                                color: #333;
-                                font-size: 1.2em;
-                            }
-                            .highlight {
-                                background-color: #ffeb3b;
-                                padding: 2px 4px;
-                                border-radius: 2px;
-                                font-weight: bold;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="results-container">
-                            <div class="search-summary">
-                                搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                            </div>
-                            ${results.map((result, index) => `
-                                <div class="result-card">
-                                    <div class="result-header">搜尋結果 #${index + 1}</div>
-                                    <div class="result-item">
-                                        <span class="label">分機號碼：</span>
-                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">使用單位：</span>
-                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">線組編號：</span>
-                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">G450 Port：</span>
-                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">分機種類：</span>
-                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">副機數量：</span>
-                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">DID號碼：</span>
-                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">裝機位置：</span>
-                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">拆遷紀錄：</span>
-                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">備註：</span>
-                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                                    </div>
+                // 如果結果超過2筆，顯示分類視窗
+                if (results.length > 2) {
+                    // 根據分機號碼分類
+                    const groupedResults = {};
+                    results.forEach(result => {
+                        const telNumber = result['分機號碼'] || result['分機'] || result['Tel'] || '未分類';
+                        const firstDigit = telNumber.toString().charAt(0);
+                        if (!groupedResults[firstDigit]) {
+                            groupedResults[firstDigit] = [];
+                        }
+                        groupedResults[firstDigit].push(result);
+                    });
+
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>分機搜尋結果分類</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .category-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .category-card {
+                                    background-color: #fff;
+                                    padding: 15px;
+                                    margin-bottom: 15px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    cursor: pointer;
+                                    transition: background-color 0.3s;
+                                }
+                                .category-card:hover {
+                                    background-color: #f5f5f5;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .result-details {
+                                    display: none;
+                                    margin-top: 10px;
+                                    padding: 10px;
+                                    background-color: #f9f9f9;
+                                    border-radius: 5px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="category-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                                 </div>
-                            `).join('')}
-                        </div>
-                    </body>
-                    </html>
-                `);
-                resultWindow.document.close();
+                                ${Object.entries(groupedResults).map(([prefix, items]) => `
+                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                        <h3>分機號碼 ${prefix}開頭 (${items.length} 筆結果)</h3>
+                                        <div class="result-details">
+                                            ${items.map((result, index) => `
+                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                    <div class="result-item">
+                                                        <span class="label">分機號碼：</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">使用單位：</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號：</span>
+                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">G450 Port：</span>
+                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">分機種類：</span>
+                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">副機數量：</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">DID號碼：</span>
+                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">裝機位置：</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">拆遷紀錄：</span>
+                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">備註：</span>
+                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                } else {
+                    // 如果結果少於或等於2筆，直接顯示詳細資訊
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>分機搜尋結果</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .results-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .result-card {
+                                    background-color: #fff;
+                                    padding: 20px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    margin-bottom: 20px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .result-header {
+                                    background-color: #4169E1;
+                                    color: white;
+                                    padding: 10px;
+                                    border-radius: 5px 5px 0 0;
+                                    margin-bottom: 10px;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="results-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                ${results.map((result, index) => `
+                                    <div class="result-card">
+                                        <div class="result-header">搜尋結果 #${index + 1}</div>
+                                        <div class="result-item">
+                                            <span class="label">分機號碼：</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">使用單位：</span>
+                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號：</span>
+                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">G450 Port：</span>
+                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">分機種類：</span>
+                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">副機數量：</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">DID號碼：</span>
+                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">裝機位置：</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">拆遷紀錄：</span>
+                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">備註：</span>
+                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                }
             } else {
                 alert('未找到符合的分機資料');
             }
@@ -553,118 +696,257 @@
                     })
                 }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
-                const resultWindow = window.open("", "_blank");
-                resultWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html lang="zh-Hant">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>調度電話搜尋結果</title>
-                        <style>
-                            body {
-                                font-family: Arial, sans-serif;
-                                margin: 0;
-                                padding: 20px;
-                                background-color: #f0f0f0;
-                            }
-                            .results-container {
-                                max-width: 800px;
-                                margin: 0 auto;
-                            }
-                            .result-card {
-                                background-color: #fff;
-                                padding: 20px;
-                                border-radius: 5px;
-                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                margin-bottom: 20px;
-                            }
-                            .result-item {
-                                display: flex;
-                                padding: 8px 0;
-                                border-bottom: 1px solid #eee;
-                            }
-                            .label {
-                                font-weight: bold;
-                                width: 120px;
-                                color: #333;
-                            }
-                            .value {
-                                flex-grow: 1;
-                                color: #666;
-                            }
-                            .result-header {
-                                background-color: #4169E1;
-                                color: white;
-                                padding: 10px;
-                                border-radius: 5px 5px 0 0;
-                                margin-bottom: 10px;
-                            }
-                            .search-summary {
-                                text-align: center;
-                                margin-bottom: 20px;
-                                color: #333;
-                                font-size: 1.2em;
-                            }
-                            .highlight {
-                                background-color: #ffeb3b;
-                                padding: 2px 4px;
-                                border-radius: 2px;
-                                font-weight: bold;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="results-container">
-                            <div class="search-summary">
-                                搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                            </div>
-                            ${results.map((result, index) => `
-                                <div class="result-card">
-                                    <div class="result-header">搜尋結果 #${index + 1}</div>
-                                    <div class="result-item">
-                                        <span class="label">分機號碼：</span>
-                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">C端子位置：</span>
-                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">LENS：</span>
-                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">線組編號(機房)：</span>
-                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">線組編號(現場)：</span>
-                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">使用單位：</span>
-                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">裝機位置：</span>
-                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">副機數量：</span>
-                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                    </div>
-                                    <div class="result-item">
-                                        <span class="label">連絡電話：</span>
-                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                    </div>
+                // 如果結果超過2筆，顯示分類視窗
+                if (results.length > 2) {
+                    // 根據分機號碼分類
+                    const groupedResults = {};
+                    results.forEach(result => {
+                        const telNumber = result['分機號碼'] || '未分類';
+                        const firstDigit = telNumber.toString().charAt(0);
+                        if (!groupedResults[firstDigit]) {
+                            groupedResults[firstDigit] = [];
+                        }
+                        groupedResults[firstDigit].push(result);
+                    });
+
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>調度電話搜尋結果分類</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .category-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .category-card {
+                                    background-color: #fff;
+                                    padding: 15px;
+                                    margin-bottom: 15px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    cursor: pointer;
+                                    transition: background-color 0.3s;
+                                }
+                                .category-card:hover {
+                                    background-color: #f5f5f5;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .result-details {
+                                    display: none;
+                                    margin-top: 10px;
+                                    padding: 10px;
+                                    background-color: #f9f9f9;
+                                    border-radius: 5px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="category-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                                 </div>
-                            `).join('')}
-                        </div>
-                    </body>
-                    </html>
-                `);
-                resultWindow.document.close();
+                                ${Object.entries(groupedResults).map(([prefix, items]) => `
+                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                        <h3>分機號碼 ${prefix}開頭 (${items.length} 筆結果)</h3>
+                                        <div class="result-details">
+                                            ${items.map((result, index) => `
+                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                    <div class="result-item">
+                                                        <span class="label">分機號碼：</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">C端子位置：</span>
+                                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">LENS：</span>
+                                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號(機房)：</span>
+                                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號(現場)：</span>
+                                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">使用單位：</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">裝機位置：</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">副機數量：</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">連絡電話：</span>
+                                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                } else {
+                    // 如果結果少於或等於2筆，直接顯示詳細資訊
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>調度電話搜尋結果</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .results-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .result-card {
+                                    background-color: #fff;
+                                    padding: 20px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    margin-bottom: 20px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .result-header {
+                                    background-color: #4169E1;
+                                    color: white;
+                                    padding: 10px;
+                                    border-radius: 5px 5px 0 0;
+                                    margin-bottom: 10px;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="results-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                ${results.map((result, index) => `
+                                    <div class="result-card">
+                                        <div class="result-header">搜尋結果 #${index + 1}</div>
+                                        <div class="result-item">
+                                            <span class="label">分機號碼：</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">C端子位置：</span>
+                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">LENS：</span>
+                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號(機房)：</span>
+                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號(現場)：</span>
+                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">使用單位：</span>
+                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">裝機位置：</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">副機數量：</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">連絡電話：</span>
+                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                }
             } else {
                 alert('未找到符合的調度電話資料');
             }
