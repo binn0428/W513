@@ -361,33 +361,36 @@
                     '其他分機': []
                 };
 
-                // 修正分類邏輯
                 results.forEach(result => {
-                    const type = (result['分機種類'] || '').toString().toLowerCase();
+                    const type = result['分機種類'] || '其他分機';
                     if (type.includes('調度')) {
                         categorizedResults['調度分機'].push(result);
-                    } else if (type.includes('ip')) {
+                    } else if (type.includes('IP')) {
                         categorizedResults['IP分機'].push(result);
-                    } else if (type.includes('一般') || type.includes('類比')) {
+                    } else if (type.includes('一般')) {
                         categorizedResults['一般分機'].push(result);
                     } else {
                         categorizedResults['其他分機'].push(result);
                     }
                 });
 
-                // 修正 Telegram 訊息格式
-                let telegramMessage = `分機搜尋結果 (關鍵字: ${input})\n總筆數: ${results.length}\n`;
+                // 準備 Telegram 訊息
+                let telegramMessage = '分機搜尋結果:\n';
                 Object.entries(categorizedResults).forEach(([category, items]) => {
                     if (items.length > 0) {
-                        telegramMessage += `\n【${category}】- ${items.length}筆\n`;
+                        telegramMessage += `\n=== ${category} ===\n`;
                         items.forEach((result, index) => {
-                            telegramMessage += `\n#${index + 1}\n`;
-                            telegramMessage += `📞分機: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
-                            telegramMessage += `📋單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
-                            telegramMessage += `📍位置: ${result['裝機位置'] || '無資料'}\n`;
-                            if (result['備註']) {
-                                telegramMessage += `📝備註: ${result['備註']}\n`;
-                            }
+                            telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                            telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
+                            telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
+                            telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
+                            telegramMessage += `G450 Port: ${result['G450 Port'] || '無資料'}\n`;
+                            telegramMessage += `分機種類: ${result['分機種類'] || '無資料'}\n`;
+                            telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
+                            telegramMessage += `DID號碼: ${result['對應DID號碼'] || '無資料'}\n`;
+                            telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
+                            telegramMessage += `拆遷紀錄: ${result['拆遷記錄'] || '無資料'}\n`;
+                            telegramMessage += `備註: ${result['備註'] || '無資料'}\n`;
                         });
                     }
                 });
@@ -402,12 +405,10 @@
                     },
                     body: JSON.stringify({
                         chat_id: chatId,
-                        text: telegramMessage,
-                        parse_mode: 'HTML'
+                        text: telegramMessage
                     })
                 }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
-                // 修正結果顯示視窗
                 const resultWindow = window.open("", "_blank");
                 resultWindow.document.write(`
                     <!DOCTYPE html>
@@ -429,39 +430,27 @@
                             }
                             .category-section {
                                 margin-bottom: 30px;
-                                background-color: white;
-                                border-radius: 8px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                             }
                             .category-header {
                                 background-color: #2c3e50;
                                 color: white;
                                 padding: 15px;
+                                border-radius: 5px;
+                                margin-bottom: 15px;
                                 font-size: 1.2em;
                                 font-weight: bold;
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                            }
-                            .category-count {
-                                background-color: #fff;
-                                color: #2c3e50;
-                                padding: 4px 8px;
-                                border-radius: 12px;
-                                font-size: 0.9em;
                             }
                             .result-card {
-                                border-bottom: 1px solid #eee;
-                                padding: 15px;
-                                margin: 0;
-                            }
-                            .result-card:last-child {
-                                border-bottom: none;
+                                background-color: #fff;
+                                padding: 20px;
+                                border-radius: 5px;
+                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                margin-bottom: 20px;
                             }
                             .result-item {
                                 display: flex;
                                 padding: 8px 0;
+                                border-bottom: 1px solid #eee;
                             }
                             .label {
                                 font-weight: bold;
@@ -472,39 +461,38 @@
                                 flex-grow: 1;
                                 color: #666;
                             }
+                            .result-header {
+                                background-color: #4169E1;
+                                color: white;
+                                padding: 10px;
+                                border-radius: 5px 5px 0 0;
+                                margin-bottom: 10px;
+                            }
                             .search-summary {
                                 text-align: center;
                                 margin-bottom: 20px;
-                                padding: 15px;
-                                background-color: white;
-                                border-radius: 8px;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                color: #333;
+                                font-size: 1.2em;
                             }
                             .highlight {
                                 background-color: #ffeb3b;
                                 padding: 2px 4px;
                                 border-radius: 2px;
-                            }
-                            .empty-category {
-                                display: none;
+                                font-weight: bold;
                             }
                         </style>
                     </head>
                     <body>
                         <div class="results-container">
                             <div class="search-summary">
-                                <h2>搜尋結果</h2>
-                                <p>關鍵字: "${input}"</p>
-                                <p>共找到 ${results.length} 筆資料</p>
+                                搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                             </div>
-                            ${Object.entries(categorizedResults).map(([category, items]) => `
-                                <div class="category-section ${items.length === 0 ? 'empty-category' : ''}">
-                                    <div class="category-header">
-                                        <span>${category}</span>
-                                        <span class="category-count">${items.length} 筆</span>
-                                    </div>
+                            ${Object.entries(categorizedResults).map(([category, items]) => items.length > 0 ? `
+                                <div class="category-section">
+                                    <div class="category-header">${category} (${items.length}筆)</div>
                                     ${items.map((result, index) => `
                                         <div class="result-card">
+                                            <div class="result-header">搜尋結果 #${index + 1}</div>
                                             <div class="result-item">
                                                 <span class="label">分機號碼：</span>
                                                 <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
@@ -548,7 +536,7 @@
                                         </div>
                                     `).join('')}
                                 </div>
-                            `).join('')}
+                            ` : '').join('')}
                         </div>
                     </body>
                     </html>
@@ -587,34 +575,34 @@
                     '其他調度': []
                 };
 
-                // 修正分類邏輯
                 results.forEach(result => {
-                    if (result['線組編號(機房)'] && result['線組編號(機房)'].toString().trim() !== '') {
+                    if (result['線組編號(機房)']) {
                         categorizedResults['機房調度'].push(result);
-                    } else if (result['線組編號(現場)'] && result['線組編號(現場)'].toString().trim() !== '') {
+                    } else if (result['線組編號(現場)']) {
                         categorizedResults['現場調度'].push(result);
-                    } else if (result['LENS'] && result['LENS'].toString().trim() !== '') {
+                    } else if (result['LENS']) {
                         categorizedResults['LENS調度'].push(result);
                     } else {
                         categorizedResults['其他調度'].push(result);
                     }
                 });
 
-                // 修正 Telegram 訊息格式
-                let telegramMessage = `調度電話搜尋結果 (關鍵字: ${input})\n總筆數: ${results.length}\n`;
+                // 準備 Telegram 訊息
+                let telegramMessage = '調度電話搜尋結果:\n';
                 Object.entries(categorizedResults).forEach(([category, items]) => {
                     if (items.length > 0) {
-                        telegramMessage += `\n【${category}】- ${items.length}筆\n`;
+                        telegramMessage += `\n=== ${category} ===\n`;
                         items.forEach((result, index) => {
-                            telegramMessage += `\n#${index + 1}\n`;
-                            telegramMessage += `📞分機: ${result['分機號碼'] || '無資料'}\n`;
-                            telegramMessage += `📍位置: ${result['裝機位置'] || '無資料'}\n`;
-                            if (result['C端子位置']) {
-                                telegramMessage += `🔌C端子: ${result['C端子位置']}\n`;
-                            }
-                            if (result['LENS']) {
-                                telegramMessage += `🔍LENS: ${result['LENS']}\n`;
-                            }
+                            telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                            telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
+                            telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
+                            telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
+                            telegramMessage += `線組編號(機房): ${result['線組編號(機房)'] || '無資料'}\n`;
+                            telegramMessage += `線組編號(現場): ${result['線組編號(現場)'] || '無資料'}\n`;
+                            telegramMessage += `使用單位: ${result['使用單位'] || '無資料'}\n`;
+                            telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
+                            telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
+                            telegramMessage += `連絡電話: ${result['連絡電話'] || '無資料'}\n`;
                         });
                     }
                 });
@@ -629,12 +617,10 @@
                     },
                     body: JSON.stringify({
                         chat_id: chatId,
-                        text: telegramMessage,
-                        parse_mode: 'HTML'
+                        text: telegramMessage
                     })
                 }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
 
-                // 修正結果顯示視窗
                 const resultWindow = window.open("", "_blank");
                 resultWindow.document.write(`
                     <!DOCTYPE html>
@@ -656,39 +642,27 @@
                             }
                             .category-section {
                                 margin-bottom: 30px;
-                                background-color: white;
-                                border-radius: 8px;
-                                overflow: hidden;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                             }
                             .category-header {
                                 background-color: #2c3e50;
                                 color: white;
                                 padding: 15px;
+                                border-radius: 5px;
+                                margin-bottom: 15px;
                                 font-size: 1.2em;
                                 font-weight: bold;
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                            }
-                            .category-count {
-                                background-color: #fff;
-                                color: #2c3e50;
-                                padding: 4px 8px;
-                                border-radius: 12px;
-                                font-size: 0.9em;
                             }
                             .result-card {
-                                border-bottom: 1px solid #eee;
-                                padding: 15px;
-                                margin: 0;
-                            }
-                            .result-card:last-child {
-                                border-bottom: none;
+                                background-color: #fff;
+                                padding: 20px;
+                                border-radius: 5px;
+                                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                margin-bottom: 20px;
                             }
                             .result-item {
                                 display: flex;
                                 padding: 8px 0;
+                                border-bottom: 1px solid #eee;
                             }
                             .label {
                                 font-weight: bold;
@@ -699,39 +673,38 @@
                                 flex-grow: 1;
                                 color: #666;
                             }
+                            .result-header {
+                                background-color: #4169E1;
+                                color: white;
+                                padding: 10px;
+                                border-radius: 5px 5px 0 0;
+                                margin-bottom: 10px;
+                            }
                             .search-summary {
                                 text-align: center;
                                 margin-bottom: 20px;
-                                padding: 15px;
-                                background-color: white;
-                                border-radius: 8px;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                color: #333;
+                                font-size: 1.2em;
                             }
                             .highlight {
                                 background-color: #ffeb3b;
                                 padding: 2px 4px;
                                 border-radius: 2px;
-                            }
-                            .empty-category {
-                                display: none;
+                                font-weight: bold;
                             }
                         </style>
                     </head>
                     <body>
                         <div class="results-container">
                             <div class="search-summary">
-                                <h2>搜尋結果</h2>
-                                <p>關鍵字: "${input}"</p>
-                                <p>共找到 ${results.length} 筆資料</p>
+                                搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                             </div>
-                            ${Object.entries(categorizedResults).map(([category, items]) => `
-                                <div class="category-section ${items.length === 0 ? 'empty-category' : ''}">
-                                    <div class="category-header">
-                                        <span>${category}</span>
-                                        <span class="category-count">${items.length} 筆</span>
-                                    </div>
+                            ${Object.entries(categorizedResults).map(([category, items]) => items.length > 0 ? `
+                                <div class="category-section">
+                                    <div class="category-header">${category} (${items.length}筆)</div>
                                     ${items.map((result, index) => `
                                         <div class="result-card">
+                                            <div class="result-header">搜尋結果 #${index + 1}</div>
                                             <div class="result-item">
                                                 <span class="label">分機號碼：</span>
                                                 <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
@@ -771,7 +744,7 @@
                                         </div>
                                     `).join('')}
                                 </div>
-                            `).join('')}
+                            ` : '').join('')}
                         </div>
                     </body>
                     </html>
