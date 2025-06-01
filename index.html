@@ -353,46 +353,20 @@
             });
 
             if (results.length > 0) {
-                // 按類別分類結果
-                const categorizedResults = {
-                    '一般分機': [],
-                    '調度分機': [],
-                    'IP分機': [],
-                    '其他分機': []
-                };
-
-                results.forEach(result => {
-                    const type = result['分機種類'] || '其他分機';
-                    if (type.includes('調度')) {
-                        categorizedResults['調度分機'].push(result);
-                    } else if (type.includes('IP')) {
-                        categorizedResults['IP分機'].push(result);
-                    } else if (type.includes('一般')) {
-                        categorizedResults['一般分機'].push(result);
-                    } else {
-                        categorizedResults['其他分機'].push(result);
-                    }
-                });
-
-                // 準備 Telegram 訊息
+                // 準備所有結果的 Telegram 訊息內容
                 let telegramMessage = '分機搜尋結果:\n';
-                Object.entries(categorizedResults).forEach(([category, items]) => {
-                    if (items.length > 0) {
-                        telegramMessage += `\n=== ${category} ===\n`;
-                        items.forEach((result, index) => {
-                            telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
-                            telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
-                            telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
-                            telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
-                            telegramMessage += `G450 Port: ${result['G450 Port'] || '無資料'}\n`;
-                            telegramMessage += `分機種類: ${result['分機種類'] || '無資料'}\n`;
-                            telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
-                            telegramMessage += `DID號碼: ${result['對應DID號碼'] || '無資料'}\n`;
-                            telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
-                            telegramMessage += `拆遷紀錄: ${result['拆遷記錄'] || '無資料'}\n`;
-                            telegramMessage += `備註: ${result['備註'] || '無資料'}\n`;
-                        });
-                    }
+                results.forEach((result, index) => {
+                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                    telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
+                    telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
+                    telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
+                    telegramMessage += `G450 Port: ${result['G450 Port'] || '無資料'}\n`;
+                    telegramMessage += `分機種類: ${result['分機種類'] || '無資料'}\n`;
+                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
+                    telegramMessage += `DID號碼: ${result['對應DID號碼'] || '無資料'}\n`;
+                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
+                    telegramMessage += `拆遷紀錄: ${result['拆遷記錄'] || '無資料'}\n`;
+                    telegramMessage += `備註: ${result['備註'] || '無資料'}\n`;
                 });
 
                 // 發送到 Telegram
@@ -428,18 +402,6 @@
                                 max-width: 800px;
                                 margin: 0 auto;
                             }
-                            .category-section {
-                                margin-bottom: 30px;
-                            }
-                            .category-header {
-                                background-color: #2c3e50;
-                                color: white;
-                                padding: 15px;
-                                border-radius: 5px;
-                                margin-bottom: 15px;
-                                font-size: 1.2em;
-                                font-weight: bold;
-                            }
                             .result-card {
                                 background-color: #fff;
                                 padding: 20px;
@@ -487,56 +449,51 @@
                             <div class="search-summary">
                                 搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                             </div>
-                            ${Object.entries(categorizedResults).map(([category, items]) => items.length > 0 ? `
-                                <div class="category-section">
-                                    <div class="category-header">${category} (${items.length}筆)</div>
-                                    ${items.map((result, index) => `
-                                        <div class="result-card">
-                                            <div class="result-header">搜尋結果 #${index + 1}</div>
-                                            <div class="result-item">
-                                                <span class="label">分機號碼：</span>
-                                                <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">使用單位：</span>
-                                                <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">線組編號：</span>
-                                                <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">G450 Port：</span>
-                                                <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">分機種類：</span>
-                                                <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">副機數量：</span>
-                                                <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">DID號碼：</span>
-                                                <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">裝機位置：</span>
-                                                <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">拆遷紀錄：</span>
-                                                <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">備註：</span>
-                                                <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                                            </div>
-                                        </div>
-                                    `).join('')}
+                            ${results.map((result, index) => `
+                                <div class="result-card">
+                                    <div class="result-header">搜尋結果 #${index + 1}</div>
+                                    <div class="result-item">
+                                        <span class="label">分機號碼：</span>
+                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">使用單位：</span>
+                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">線組編號：</span>
+                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">G450 Port：</span>
+                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">分機種類：</span>
+                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">副機數量：</span>
+                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">DID號碼：</span>
+                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">裝機位置：</span>
+                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">拆遷紀錄：</span>
+                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">備註：</span>
+                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                    </div>
                                 </div>
-                            ` : '').join('')}
+                            `).join('')}
                         </div>
                     </body>
                     </html>
@@ -567,44 +524,19 @@
             });
 
             if (results.length > 0) {
-                // 按類別分類結果
-                const categorizedResults = {
-                    '機房調度': [],
-                    '現場調度': [],
-                    'LENS調度': [],
-                    '其他調度': []
-                };
-
-                results.forEach(result => {
-                    if (result['線組編號(機房)']) {
-                        categorizedResults['機房調度'].push(result);
-                    } else if (result['線組編號(現場)']) {
-                        categorizedResults['現場調度'].push(result);
-                    } else if (result['LENS']) {
-                        categorizedResults['LENS調度'].push(result);
-                    } else {
-                        categorizedResults['其他調度'].push(result);
-                    }
-                });
-
-                // 準備 Telegram 訊息
+                // 準備所有結果的 Telegram 訊息內容
                 let telegramMessage = '調度電話搜尋結果:\n';
-                Object.entries(categorizedResults).forEach(([category, items]) => {
-                    if (items.length > 0) {
-                        telegramMessage += `\n=== ${category} ===\n`;
-                        items.forEach((result, index) => {
-                            telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
-                            telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
-                            telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
-                            telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
-                            telegramMessage += `線組編號(機房): ${result['線組編號(機房)'] || '無資料'}\n`;
-                            telegramMessage += `線組編號(現場): ${result['線組編號(現場)'] || '無資料'}\n`;
-                            telegramMessage += `使用單位: ${result['使用單位'] || '無資料'}\n`;
-                            telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
-                            telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
-                            telegramMessage += `連絡電話: ${result['連絡電話'] || '無資料'}\n`;
-                        });
-                    }
+                results.forEach((result, index) => {
+                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                    telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
+                    telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
+                    telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
+                    telegramMessage += `線組編號(機房): ${result['線組編號(機房)'] || '無資料'}\n`;
+                    telegramMessage += `線組編號(現場): ${result['線組編號(現場)'] || '無資料'}\n`;
+                    telegramMessage += `使用單位: ${result['使用單位'] || '無資料'}\n`;
+                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
+                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
+                    telegramMessage += `連絡電話: ${result['連絡電話'] || '無資料'}\n`;
                 });
 
                 // 發送到 Telegram
@@ -640,18 +572,6 @@
                                 max-width: 800px;
                                 margin: 0 auto;
                             }
-                            .category-section {
-                                margin-bottom: 30px;
-                            }
-                            .category-header {
-                                background-color: #2c3e50;
-                                color: white;
-                                padding: 15px;
-                                border-radius: 5px;
-                                margin-bottom: 15px;
-                                font-size: 1.2em;
-                                font-weight: bold;
-                            }
                             .result-card {
                                 background-color: #fff;
                                 padding: 20px;
@@ -699,52 +619,47 @@
                             <div class="search-summary">
                                 搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                             </div>
-                            ${Object.entries(categorizedResults).map(([category, items]) => items.length > 0 ? `
-                                <div class="category-section">
-                                    <div class="category-header">${category} (${items.length}筆)</div>
-                                    ${items.map((result, index) => `
-                                        <div class="result-card">
-                                            <div class="result-header">搜尋結果 #${index + 1}</div>
-                                            <div class="result-item">
-                                                <span class="label">分機號碼：</span>
-                                                <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">C端子位置：</span>
-                                                <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">LENS：</span>
-                                                <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">線組編號(機房)：</span>
-                                                <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">線組編號(現場)：</span>
-                                                <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">使用單位：</span>
-                                                <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">裝機位置：</span>
-                                                <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">副機數量：</span>
-                                                <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                            </div>
-                                            <div class="result-item">
-                                                <span class="label">連絡電話：</span>
-                                                <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                            </div>
-                                        </div>
-                                    `).join('')}
+                            ${results.map((result, index) => `
+                                <div class="result-card">
+                                    <div class="result-header">搜尋結果 #${index + 1}</div>
+                                    <div class="result-item">
+                                        <span class="label">分機號碼：</span>
+                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">C端子位置：</span>
+                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">LENS：</span>
+                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">線組編號(機房)：</span>
+                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">線組編號(現場)：</span>
+                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">使用單位：</span>
+                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">裝機位置：</span>
+                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">副機數量：</span>
+                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">連絡電話：</span>
+                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                    </div>
                                 </div>
-                            ` : '').join('')}
+                            `).join('')}
                         </div>
                     </body>
                     </html>
