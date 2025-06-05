@@ -309,20 +309,32 @@
                 formData.append('file', blob, '調度資料.xlsx');
                 
                 // 發送到伺服器保存
-                const response = await fetch(window.location.hostname === 'binn0428.github.io' ? 'https://your-server-domain.com/save-excel' : 'http://localhost:8000/save-excel', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    showLoadingStatus('資料已成功保存！');
-                    setTimeout(() => {
-                        removeLoadingStatus();
-                        loadData(); // 重新載入資料
-                    }, 1000);
-                } else {
-                    throw new Error(result.error || '保存失敗');
+                try {
+                    const response = await fetch(window.location.hostname === 'binn0428.github.io' ? 'https://your-server-domain.com/save-excel' : 'http://localhost:8000/save-excel', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP錯誤: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showLoadingStatus('資料已成功保存！');
+                        setTimeout(() => {
+                            removeLoadingStatus();
+                            loadData(); // 重新載入資料
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error || '保存失敗');
+                    }
+                } catch (error) {
+                    console.error('資料更新錯誤:', error);
+                    showLoadingStatus(`資料更新失敗: ${error.message}`);
+                    setTimeout(removeLoadingStatus, 3000);
+                    throw error;
                 }
             } catch (error) {
                 console.error('資料更新錯誤:', error);
@@ -1337,20 +1349,32 @@
                 formData.append('file', blob, '電話資料.xlsx');
                 
                 // 發送到伺服器保存
-                const response = await fetch(window.location.hostname === 'binn0428.github.io' ? 'https://your-server-domain.com/save-excel' : 'http://localhost:8000/save-excel', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    showLoadingStatus('資料已成功保存！');
-                    setTimeout(() => {
-                        removeLoadingStatus();
-                        loadData(); // 重新載入資料
-                    }, 1000);
-                } else {
-                    throw new Error(result.error || '保存失敗');
+                try {
+                    const response = await fetch(window.location.hostname === 'binn0428.github.io' ? 'https://your-server-domain.com/save-excel' : 'http://localhost:8000/save-excel', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP錯誤: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showLoadingStatus('資料已成功保存！');
+                        setTimeout(() => {
+                            removeLoadingStatus();
+                            loadData(); // 重新載入資料
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error || '保存失敗');
+                    }
+                } catch (error) {
+                    console.error('資料更新錯誤:', error);
+                    showLoadingStatus(`資料更新失敗: ${error.message}`);
+                    setTimeout(removeLoadingStatus, 3000);
+                    throw error;
                 }
             } catch (error) {
                 console.error('資料更新錯誤:', error);
