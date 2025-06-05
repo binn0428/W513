@@ -1307,25 +1307,50 @@
         });
 
         function updateTelData(element, index, field) {
-            const newValue = element.textContent;
-            telData[index][field] = newValue;
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (telData && telData[index]) {
+                telData[index][field] = newValue;
+            }
         }
 
         function saveTelData(index) {
-            const workbook = XLSX.utils.book_new();
-            const worksheet = XLSX.utils.json_to_sheet(telData);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '電話資料.xlsx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert('資料已成功保存！');
+            try {
+                showLoadingStatus('正在保存資料...');
+                
+                // 將更新後的資料轉換為工作表
+                const ws = XLSX.utils.json_to_sheet(telData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                // 將工作表轉換為二進制數據
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                
+                // 創建Blob對象
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // 創建FormData對象
+                const formData = new FormData();
+                formData.append('file', blob, 'tel/電話資料.xlsx');
+                
+                // 直接將文件保存到本地
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = '電話資料.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                
+                showLoadingStatus('資料已更新並下載！');
+                setTimeout(removeLoadingStatus, 1000);
+                
+            } catch (error) {
+                console.error('資料更新錯誤:', error);
+                showLoadingStatus('資料更新失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
+            }
         }
     </script>
 </head>
