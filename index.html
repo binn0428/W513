@@ -367,8 +367,16 @@
                 ]);
 
                 // 檢查回應狀態
-                if (!telResponse.ok) throw new Error('從Google Sheets載入電話資料失敗');
-                if (!dispatchResponse.ok) throw new Error('從Google Sheets載入調度資料失敗');
+                if (!telResponse.ok) {
+                    removeLoadingStatus();
+                    showLoadingStatus('從Google Sheets載入電話資料失敗', 'error');
+                    throw new Error('從Google Sheets載入電話資料失敗');
+                }
+                if (!dispatchResponse.ok) {
+                    removeLoadingStatus();
+                    showLoadingStatus('從Google Sheets載入調度資料失敗', 'error');
+                    throw new Error('從Google Sheets載入調度資料失敗');
+                }
 
                 // 轉換為 ArrayBuffer
                 const [telBuffer, dispatchBuffer] = await Promise.all([
