@@ -362,13 +362,13 @@
                 
                 // 同時載入兩個檔案
                 const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('./tel/電話資料.xlsx'),
-                    fetch('./tel/調度資料.xlsx')
+                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1192108239#gid=1192108239'),
+                    fetch('https://docs.google.com/spreadsheets/d/1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0/edit?gid=1179347635#gid=1179347635')
                 ]);
 
                 // 檢查回應狀態
-                if (!telResponse.ok) throw new Error('電話資料載入失敗');
-                if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
+                if (!telResponse.ok) throw new Error('從Google Sheets載入電話資料失敗');
+                if (!dispatchResponse.ok) throw new Error('從Google Sheets載入調度資料失敗');
 
                 // 轉換為 ArrayBuffer
                 const [telBuffer, dispatchBuffer] = await Promise.all([
