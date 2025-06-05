@@ -278,6 +278,55 @@
         let telData = null;
         let dispatchData = null;
 
+        // 更新調度資料的函數
+        function updateDispatchData(element, index, field) {
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (dispatchData && dispatchData[index]) {
+                dispatchData[index][field] = newValue;
+            }
+        }
+
+        // 保存調度資料到Excel的函數
+        async function saveDispatchData(index) {
+            try {
+                showLoadingStatus('正在保存資料...');
+                
+                // 將更新後的資料轉換為工作表
+                const ws = XLSX.utils.json_to_sheet(dispatchData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                // 將工作表轉換為二進制數據
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                
+                // 創建Blob對象
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // 創建FormData對象
+                const formData = new FormData();
+                formData.append('file', blob, 'tel/調度資料.xlsx');
+                
+                // 直接將文件保存到本地
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = '調度資料.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                
+                showLoadingStatus('資料已更新並下載！');
+                setTimeout(removeLoadingStatus, 1000);
+                
+            } catch (error) {
+                console.error('資料更新錯誤:', error);
+                showLoadingStatus('資料更新失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
+            }
+        }
+
         // 添加載入狀態指示器
         function showLoadingStatus(message) {
             removeLoadingStatus();
@@ -547,6 +596,40 @@
                                     flex-grow: 1;
                                     color: #444;
                                 }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                                }
                                 .highlight {
                                     background: linear-gradient(145deg, #fff3a0, #ffe066);
                                     padding: 2px 6px;
@@ -672,6 +755,40 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                                }
                                 .highlight {
                                     background-color: #ffeb3b;
                                     padding: 2px 4px;
@@ -694,39 +811,48 @@
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號：</span>
-                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號')">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">G450 Port：</span>
-                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">分機種類：</span>
-                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類')">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">DID號碼：</span>
-                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">拆遷紀錄：</span>
-                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">備註：</span>
-                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註')">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -900,6 +1026,40 @@
                                     flex-grow: 1;
                                     color: #444;
                                 }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                                }
                                 .highlight {
                                     background: linear-gradient(145deg, #fff3a0, #ffe066);
                                     padding: 2px 6px;
@@ -926,35 +1086,43 @@
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">C端子位置：</span>
-                                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">LENS：</span>
-                                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(機房)：</span>
-                                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(現場)：</span>
-                                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">使用單位：</span>
-                                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">裝機位置：</span>
-                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">副機數量：</span>
-                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">連絡電話：</span>
-                                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                 </div>
                                             `).join('')}
@@ -1021,6 +1189,40 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                                }
                                 .highlight {
                                     background-color: #ffeb3b;
                                     padding: 2px 4px;
@@ -1043,35 +1245,43 @@
                                         </div>
                                         <div class="result-item">
                                             <span class="label">C端子位置：</span>
-                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">LENS：</span>
-                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(機房)：</span>
-                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(現場)：</span>
-                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">連絡電話：</span>
-                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -1095,6 +1305,28 @@
                 e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
             }
         });
+
+        function updateTelData(element, index, field) {
+            const newValue = element.textContent;
+            telData[index][field] = newValue;
+        }
+
+        function saveTelData(index) {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(telData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '電話資料.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('資料已成功保存！');
+        }
     </script>
 </head>
 <body>
