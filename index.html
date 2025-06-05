@@ -360,66 +360,29 @@
             try {
                 showLoadingStatus('正在載入資料...');
                 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                // 同時載入兩個Google Sheets
-                const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1167019897#gid=1167019897'),
-=======
                 // 同時載入兩個檔案
                 const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1192108239#gid=1192108239'),
->>>>>>> Stashed changes
-=======
-                // 同時載入兩個檔案
-                const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1192108239#gid=1192108239'),
->>>>>>> Stashed changes
-                    fetch('https://docs.google.com/spreadsheets/d/1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0/edit?gid=1179347635#gid=1179347635')
+                    fetch('./tel/電話資料.xlsx'),
+                    fetch('./tel/調度資料.xlsx')
                 ]);
 
                 // 檢查回應狀態
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                if (!telResponse.ok) throw new Error('從Google Sheets載入電話資料失敗');
-                if (!dispatchResponse.ok) throw new Error('從Google Sheets載入調度資料失敗');
-=======
-=======
->>>>>>> Stashed changes
-                if (!telResponse.ok) {
-                    removeLoadingStatus();
-                    showLoadingStatus('從Google Sheets載入電話資料失敗', 'error');
-                    throw new Error('從Google Sheets載入電話資料失敗');
-                }
-                if (!dispatchResponse.ok) {
-                    removeLoadingStatus();
-                    showLoadingStatus('從Google Sheets載入調度資料失敗', 'error');
-                    throw new Error('從Google Sheets載入調度資料失敗');
-                }
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+                if (!telResponse.ok) throw new Error('電話資料載入失敗');
+                if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
 
-                // 轉換為文本
-                const [telText, dispatchText] = await Promise.all([
-                    telResponse.text(),
-                    dispatchResponse.text()
+                // 轉換為 ArrayBuffer
+                const [telBuffer, dispatchBuffer] = await Promise.all([
+                    telResponse.arrayBuffer(),
+                    dispatchResponse.arrayBuffer()
                 ]);
 
                 // 處理電話資料
-                telData = csvToJson(telText);
-                
+                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
+                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
+
                 // 處理調度資料
-                dispatchData = csvToJson(dispatchText);
-                
-                // 將調度資料的數字轉換為字串格式
-                dispatchData = dispatchData.map(item => {
-                    if (item['分機號碼'] !== undefined) {
-                        item['分機號碼'] = item['分機號碼'].toString();
-                    }
-                    return item;
-                });
+                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
+                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
 
                 // 將調度資料的數字轉換為字串格式
                 dispatchData = dispatchData.map(item => {
