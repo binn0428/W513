@@ -360,15 +360,34 @@
             try {
                 showLoadingStatus('正在載入資料...');
                 
+<<<<<<< Updated upstream
                 // 同時載入兩個Google Sheets
                 const [telResponse, dispatchResponse] = await Promise.all([
                     fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1167019897#gid=1167019897'),
+=======
+                // 同時載入兩個檔案
+                const [telResponse, dispatchResponse] = await Promise.all([
+                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1192108239#gid=1192108239'),
+>>>>>>> Stashed changes
                     fetch('https://docs.google.com/spreadsheets/d/1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0/edit?gid=1179347635#gid=1179347635')
                 ]);
 
                 // 檢查回應狀態
+<<<<<<< Updated upstream
                 if (!telResponse.ok) throw new Error('從Google Sheets載入電話資料失敗');
                 if (!dispatchResponse.ok) throw new Error('從Google Sheets載入調度資料失敗');
+=======
+                if (!telResponse.ok) {
+                    removeLoadingStatus();
+                    showLoadingStatus('從Google Sheets載入電話資料失敗', 'error');
+                    throw new Error('從Google Sheets載入電話資料失敗');
+                }
+                if (!dispatchResponse.ok) {
+                    removeLoadingStatus();
+                    showLoadingStatus('從Google Sheets載入調度資料失敗', 'error');
+                    throw new Error('從Google Sheets載入調度資料失敗');
+                }
+>>>>>>> Stashed changes
 
                 // 轉換為文本
                 const [telText, dispatchText] = await Promise.all([
