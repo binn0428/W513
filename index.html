@@ -306,24 +306,28 @@
                 
                 // 創建FormData對象
                 const formData = new FormData();
-                formData.append('file', blob, 'tel/調度資料.xlsx');
+                formData.append('file', blob, '調度資料.xlsx');
                 
-                // 直接將文件保存到本地
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = '調度資料.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(a.href);
+                // 發送到伺服器保存
+                const response = await fetch('http://localhost:8000/save-excel', {
+                    method: 'POST',
+                    body: formData
+                });
                 
-                showLoadingStatus('資料已更新並下載！');
-                setTimeout(removeLoadingStatus, 1000);
-                
+                const result = await response.json();
+                if (result.success) {
+                    showLoadingStatus('資料已成功保存！');
+                    setTimeout(() => {
+                        removeLoadingStatus();
+                        loadData(); // 重新載入資料
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || '保存失敗');
+                }
             } catch (error) {
                 console.error('資料更新錯誤:', error);
-                showLoadingStatus('資料更新失敗，請重試');
-                setTimeout(removeLoadingStatus, 1000);
+                showLoadingStatus('資料更新失敗：' + error.message);
+                setTimeout(removeLoadingStatus, 2000);
             }
         }
 
@@ -360,10 +364,12 @@
             try {
                 showLoadingStatus('正在載入資料...');
                 
+                // 添加時間戳參數以避免快取
+                const timestamp = new Date().getTime();
                 // 同時載入兩個檔案
                 const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('./tel/電話資料.xlsx'),
-                    fetch('./tel/調度資料.xlsx')
+                    fetch(`./tel/電話資料.xlsx?t=${timestamp}`),
+                    fetch(`./tel/調度資料.xlsx?t=${timestamp}`)
                 ]);
 
                 // 檢查回應狀態
@@ -1311,21 +1317,46 @@
             telData[index][field] = newValue;
         }
 
-        function saveTelData(index) {
-            const workbook = XLSX.utils.book_new();
-            const worksheet = XLSX.utils.json_to_sheet(telData);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '電話資料.xlsx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert('資料已成功保存！');
+        async function saveTelData(index) {
+            try {
+                showLoadingStatus('正在保存資料...');
+                
+                // 將更新後的資料轉換為工作表
+                const ws = XLSX.utils.json_to_sheet(telData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                // 將工作表轉換為二進制數據
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                
+                // 創建Blob對象
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // 創建FormData對象
+                const formData = new FormData();
+                formData.append('file', blob, '電話資料.xlsx');
+                
+                // 發送到伺服器保存
+                const response = await fetch('http://localhost:8000/save-excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showLoadingStatus('資料已成功保存！');
+                    setTimeout(() => {
+                        removeLoadingStatus();
+                        loadData(); // 重新載入資料
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || '保存失敗');
+                }
+            } catch (error) {
+                console.error('資料更新錯誤:', error);
+                showLoadingStatus('資料更新失敗：' + error.message);
+                setTimeout(removeLoadingStatus, 2000);
+            }
         }
     </script>
 </head>
