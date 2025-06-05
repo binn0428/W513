@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>資料查詢</title>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             display: flex;
@@ -306,51 +306,34 @@
             }
         }
 
-        // CSV轉JSON函數
-        function csvToJson(csv) {
-            const lines = csv.split('\n');
-            const result = [];
-            const headers = lines[0].split(',');
-            
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
-                const obj = {};
-                const currentline = lines[i].split(',');
-                
-                for (let j = 0; j < headers.length; j++) {
-                    obj[headers[j]] = currentline[j];
-                }
-                result.push(obj);
-            }
-            return result;
-        }
-        
         // 資料載入函數
         async function loadData() {
             try {
                 showLoadingStatus('正在載入資料...');
                 
-                // 從Google Sheets載入資料
+                // 同時載入兩個檔案
                 const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/edit?gid=1192108239#gid=1192108239'),
-                    fetch('https://docs.google.com/spreadsheets/d/1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0/edit?gid=1179347635#gid=1179347635')
+                    fetch('./tel/電話資料.xlsx'),
+                    fetch('./tel/調度資料.xlsx')
                 ]);
 
                 // 檢查回應狀態
                 if (!telResponse.ok) throw new Error('電話資料載入失敗');
                 if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
 
-                // 取得CSV內容
-                const [telCSV, dispatchCSV] = await Promise.all([
-                    telResponse.text(),
-                    dispatchResponse.text()
+                // 轉換為 ArrayBuffer
+                const [telBuffer, dispatchBuffer] = await Promise.all([
+                    telResponse.arrayBuffer(),
+                    dispatchResponse.arrayBuffer()
                 ]);
 
                 // 處理電話資料
-                telData = csvToJson(telCSV);
-                
+                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
+                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
+
                 // 處理調度資料
-                dispatchData = csvToJson(dispatchCSV);
+                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
+                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
 
                 // 將調度資料的數字轉換為字串格式
                 dispatchData = dispatchData.map(item => {
