@@ -309,7 +309,7 @@
                 formData.append('file', blob, '調度資料.xlsx');
                 
                 // 發送到伺服器保存
-                const response = await fetch('http://localhost:8000/save-excel', {
+                const response = await fetch(window.location.hostname === 'binn0428.github.io' ? 'https://your-server-domain.com/save-excel' : 'http://localhost:8000/save-excel', {
                     method: 'POST',
                     body: formData
                 });
@@ -1337,7 +1337,7 @@
                 formData.append('file', blob, '電話資料.xlsx');
                 
                 // 發送到伺服器保存
-                const response = await fetch('http://localhost:8000/save-excel', {
+                const response = await fetch(window.location.hostname === 'binn0428.github.io' ? 'https://your-server-domain.com/save-excel' : 'http://localhost:8000/save-excel', {
                     method: 'POST',
                     body: formData
                 });
