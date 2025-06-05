@@ -360,29 +360,27 @@
             try {
                 showLoadingStatus('正在載入資料...');
                 
-                // 同時載入兩個檔案
+                // 同時載入兩個Google Sheets CSV資料
                 const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('./tel/電話資料.xlsx'),
-                    fetch('./tel/調度資料.xlsx')
+                    fetch('https://docs.google.com/spreadsheets/d/179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo/export?format=csv&gid=1167019897'),
+                    fetch('https://docs.google.com/spreadsheets/d/1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0/export?format=csv&gid=1179347635')
                 ]);
 
                 // 檢查回應狀態
-                if (!telResponse.ok) throw new Error('電話資料載入失敗');
-                if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
+                if (!telResponse.ok) throw new Error('從Google Sheets載入電話資料失敗');
+                if (!dispatchResponse.ok) throw new Error('從Google Sheets載入調度資料失敗');
 
-                // 轉換為 ArrayBuffer
-                const [telBuffer, dispatchBuffer] = await Promise.all([
-                    telResponse.arrayBuffer(),
-                    dispatchResponse.arrayBuffer()
+                // 取得CSV文字內容
+                const [telCSV, dispatchCSV] = await Promise.all([
+                    telResponse.text(),
+                    dispatchResponse.text()
                 ]);
 
                 // 處理電話資料
-                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
-                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
-
+                telData = csvToJson(telCSV);
+                
                 // 處理調度資料
-                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
-                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
+                dispatchData = csvToJson(dispatchCSV);
 
                 // 將調度資料的數字轉換為字串格式
                 dispatchData = dispatchData.map(item => {
