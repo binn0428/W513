@@ -436,8 +436,11 @@
             const newValue = element.textContent.replace(/\(位置: Sheet1![A-Z]\d+\)/, '').trim();
             if (dispatchData[index]) {
                 dispatchData[index][field] = newValue;
-                // 直接更新 Google Sheets
-                updateGoogleSheet(DISPATCH_SPREADSHEET_ID, position, newValue);
+                updateGoogleSheet(DISPATCH_SPREADSHEET_ID, position, newValue).catch(error => {
+                    console.error('更新調度資料失敗:', error);
+                    // 還原顯示的值
+                    element.textContent = dispatchData[index][field];
+                });
             }
         }
 
@@ -481,16 +484,18 @@
         }
 
         // 添加載入狀態指示器
-        function showLoadingStatus(message) {
-            removeLoadingStatus();
+        function showLoadingStatus(message, id = 'default') {
+            removeLoadingStatus(id);
             const statusDiv = document.createElement('div');
-            statusDiv.id = 'loadingStatus';
+            statusDiv.id = `loadingStatus_${id}`;
             statusDiv.style.position = 'fixed';
             statusDiv.style.top = '50%';
             statusDiv.style.left = '50%';
             statusDiv.style.transform = 'translate(-50%, -50%)';
             statusDiv.style.padding = '15px 30px';
-            statusDiv.style.background = message.includes('完成') ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            statusDiv.style.background = message.includes('成功') ? 'rgba(40, 167, 69, 0.9)' : 
+                                       message.includes('失敗') ? 'rgba(220, 53, 69, 0.9)' : 
+                                       'rgba(0, 0, 0, 0.8)';
             statusDiv.style.color = 'white';
             statusDiv.style.borderRadius = '4px';
             statusDiv.style.zIndex = '1000';
@@ -501,8 +506,9 @@
             document.body.appendChild(statusDiv);
         }
 
-        function removeLoadingStatus() {
-            const statusDiv = document.getElementById('loadingStatus');
+        // 修改移除狀態函數以支援多個載入狀態
+        function removeLoadingStatus(id = 'default') {
+            const statusDiv = document.getElementById(`loadingStatus_${id}`);
             if (statusDiv && statusDiv.parentNode) {
                 statusDiv.parentNode.removeChild(statusDiv);
             }
@@ -1430,8 +1436,11 @@
             const newValue = element.textContent.replace(/\(位置: Sheet1![A-Z]\d+\)/, '').trim();
             if (telData[index]) {
                 telData[index][field] = newValue;
-                // 直接更新 Google Sheets
-                updateGoogleSheet(TEL_SPREADSHEET_ID, position, newValue);
+                updateGoogleSheet(TEL_SPREADSHEET_ID, position, newValue).catch(error => {
+                    console.error('更新電話資料失敗:', error);
+                    // 還原顯示的值
+                    element.textContent = telData[index][field];
+                });
             }
         }
 
@@ -1454,10 +1463,27 @@
 
         // 更新 Google Sheets 的函數
         async function updateGoogleSheet(spreadsheetId, position, newValue) {
+            const loadingId = Date.now(); // 創建唯一的載入ID
             try {
-                showLoadingStatus('正在更新資料...');
+                showLoadingStatus('正在更新資料...', loadingId);
                 
-                await gapi.client.sheets.spreadsheets.values.update({
+                // 檢查 Google Sheets API 是否已初始化
+                if (!gapi.client || !gapi.client.sheets) {
+                    throw new Error('Google Sheets API 尚未初始化');
+                }
+
+                // 檢查參數
+                if (!spreadsheetId || !position || newValue === undefined) {
+                    throw new Error('更新資料參數不完整');
+                }
+
+                // 設定超時
+                const timeout = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('更新超時')), 10000)
+                );
+
+                // 執行更新
+                const updatePromise = gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId: spreadsheetId,
                     range: `Sheet1!${position}`,
                     valueInputOption: 'USER_ENTERED',
@@ -1465,14 +1491,32 @@
                         values: [[newValue]]
                     }
                 });
+
+                // 使用 Promise.race 來處理超時
+                await Promise.race([updatePromise, timeout]);
                 
-                showLoadingStatus('資料更新成功！');
-                setTimeout(removeLoadingStatus, 500);
+                showLoadingStatus('資料更新成功！', loadingId);
+                setTimeout(() => removeLoadingStatus(loadingId), 1000);
                 
             } catch (error) {
                 console.error('更新資料錯誤:', error);
-                showLoadingStatus('更新資料失敗: ' + error.message);
-                setTimeout(removeLoadingStatus, 1000);
+                let errorMessage = '更新失敗: ';
+                
+                if (error.status === 403) {
+                    errorMessage += '沒有權限存取試算表';
+                } else if (error.status === 404) {
+                    errorMessage += '找不到指定的試算表';
+                } else if (error.message === '更新超時') {
+                    errorMessage += '連線逾時，請稍後再試';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showLoadingStatus(errorMessage, loadingId);
+                setTimeout(() => removeLoadingStatus(loadingId), 2000);
+                
+                // 重新載入資料
+                await Promise.all([loadTelData(), loadDispatchData()]);
             }
         }
 
