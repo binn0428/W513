@@ -159,13 +159,13 @@
                 // 載入電話資料
                 const telephoneResponse = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: TELEPHONE_SHEET_ID,
-                    range: 'Sheet1!A:Z'
+                    range: 'Sheet1!A:K'
                 });
                 
                 // 載入調度資料
                 const dispatchResponse = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: DISPATCH_SHEET_ID,
-                    range: 'Sheet1!A:Z'
+                    range: 'Sheet1!A:J'
                 });
 
                 // 處理資料
