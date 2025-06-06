@@ -183,13 +183,11 @@
                 }
 
                 const headers = values[0];
-                telData = values.slice(1).map((row, index) => {
+                telData = values.slice(1).map(row => {
                     const obj = {};
-                    headers.forEach((header, colIndex) => {
-                        obj[header] = row[colIndex] || '';
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
                     });
-                    // 添加行號資訊（index + 2 是因為第一行是標題，且 Google Sheets 是 1-based）
-                    obj._rowIndex = index + 2;
                     return obj;
                 });
 
@@ -222,13 +220,11 @@
                 }
 
                 const headers = values[0];
-                dispatchData = values.slice(1).map((row, index) => {
+                dispatchData = values.slice(1).map(row => {
                     const obj = {};
-                    headers.forEach((header, colIndex) => {
-                        obj[header] = row[colIndex] || '';
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
                     });
-                    // 添加行號資訊
-                    obj._rowIndex = index + 2;
                     return obj;
                 });
 
@@ -887,12 +883,7 @@
                                 </div>
                                 ${results.map((result, index) => `
                                     <div class="result-card">
-                                        <div class="result-header">
-                                            搜尋結果 #${index + 1} 
-                                            <span style="float: right; font-size: 0.8em;">
-                                                位置: Sheet1!A${result._rowIndex}
-                                            </span>
-                                        </div>
+                                        <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
                                             <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
@@ -1168,12 +1159,6 @@
                                         <div class="result-details">
                                             ${items.map((result, index) => `
                                                 <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                    <div style="background: #4169E1; color: white; padding: 8px; border-radius: 5px 5px 0 0; margin: -10px -10px 10px -10px;">
-                                                        搜尋結果 #${index + 1}
-                                                        <span style="float: right; font-size: 0.8em;">
-                                                            位置: Sheet1!A${result._rowIndex}
-                                                        </span>
-                                                    </div>
                                                     <div class="result-item">
                                                         <span class="label">分機號碼：</span>
                                                         <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
@@ -1332,12 +1317,7 @@
                                 </div>
                                 ${results.map((result, index) => `
                                     <div class="result-card">
-                                        <div class="result-header">
-                                            搜尋結果 #${index + 1} 
-                                            <span style="float: right; font-size: 0.8em;">
-                                                位置: Sheet1!A${result._rowIndex}
-                                            </span>
-                                        </div>
+                                        <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
                                             <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
@@ -1406,12 +1386,8 @@
         });
 
         function updateTelData(element, index, field) {
-            const newValue = element.textContent.trim();
-            if (telData[index]) {
-                telData[index][field] = newValue;
-                // 準備更新 Google Sheets
-                updateGoogleSheet(TEL_SPREADSHEET_ID, telData[index]._rowIndex, field, newValue);
-            }
+            const newValue = element.textContent;
+            telData[index][field] = newValue;
         }
 
         function saveTelData(index) {
@@ -1429,47 +1405,6 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             alert('資料已成功保存！');
-        }
-
-        // 更新 Google Sheets 的函數
-        async function updateGoogleSheet(spreadsheetId, rowIndex, field, newValue) {
-            try {
-                showLoadingStatus('正在更新資料...');
-                
-                // 首先獲取標題行以找到欄位的位置
-                const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: spreadsheetId,
-                    range: 'Sheet1!1:1'
-                });
-                
-                const headers = response.result.values[0];
-                const colIndex = headers.indexOf(field);
-                
-                if (colIndex === -1) {
-                    throw new Error('找不到對應的欄位');
-                }
-                
-                // 計算欄位的 A1 表示法
-                const colLetter = String.fromCharCode(65 + colIndex); // 65 是 'A' 的 ASCII 碼
-                const range = `Sheet1!${colLetter}${rowIndex}`;
-                
-                await gapi.client.sheets.spreadsheets.values.update({
-                    spreadsheetId: spreadsheetId,
-                    range: range,
-                    valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: [[newValue]]
-                    }
-                });
-                
-                showLoadingStatus('資料更新成功！');
-                setTimeout(removeLoadingStatus, 500);
-                
-            } catch (error) {
-                console.error('更新資料錯誤:', error);
-                showLoadingStatus('更新資料失敗: ' + error.message);
-                setTimeout(removeLoadingStatus, 1000);
-            }
         }
     </script>
 </head>
