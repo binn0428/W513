@@ -241,15 +241,21 @@
             try {
                 showLoadingStatus('正在保存資料到 Google Sheets...');
 
-                const values = telData.map(row => {
-                    return Object.values(row);
-                });
+                // 將資料轉換為適合 Google Sheets API 的格式
+                const headers = Object.keys(telData[0]);
+                const values = [
+                    headers,  // 第一行是標題
+                    ...telData.map(row => headers.map(header => row[header] || ''))  // 後面是資料行
+                ];
 
+                // 使用 Google Sheets API 更新資料
                 await gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId: TEL_SPREADSHEET_ID,
-                    range: RANGE,
-                    valueInputOption: 'USER_ENTERED',
+                    range: 'Sheet1!A1',  // 從 A1 開始更新
+                    valueInputOption: 'USER_ENTERED',  // 允許使用者輸入格式
                     resource: {
+                        range: 'Sheet1!A1',
+                        majorDimension: 'ROWS',
                         values: values
                     }
                 });
@@ -1386,8 +1392,14 @@
         });
 
         function updateTelData(element, index, field) {
-            const newValue = element.textContent;
-            telData[index][field] = newValue;
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (telData && telData[index]) {
+                telData[index][field] = newValue;
+                // 當資料更新時，自動保存到 Google Sheets
+                saveData(index);
+            }
         }
 
         function saveTelData(index) {
