@@ -165,7 +165,7 @@
         // 載入電話資料
         async function loadTelData() {
             try {
-                showLoadingStatus('正在從 Google Sheets 載入電話資料...');
+                showLoadingStatus('正在載入電話資料...');
                 console.log('開始載入電話資料...');
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -202,7 +202,7 @@
         // 載入調度資料
         async function loadDispatchData() {
             try {
-                showLoadingStatus('正在從 Google Sheets 載入調度資料...');
+                showLoadingStatus('正在載入調度資料...');
                 console.log('開始載入調度資料...');
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
