@@ -1391,20 +1391,55 @@
         }
 
         function saveTelData(index) {
-            const workbook = XLSX.utils.book_new();
-            const worksheet = XLSX.utils.json_to_sheet(telData);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '電話資料.xlsx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert('資料已成功保存！');
+            try {
+                showLoadingStatus('正在保存資料...');
+                
+                // 將資料轉換為 Google Sheets API 所需的格式
+                const headers = Object.keys(telData[0]);
+                const values = [headers];
+                telData.forEach(row => {
+                    values.push(headers.map(header => row[header] || ''));
+                });
+
+                // 更新 Google Sheets
+                gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: TEL_SPREADSHEET_ID,
+                    range: 'Sheet1!A1:K' + (values.length),
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: values
+                    }
+                }).then(response => {
+                    console.log('Google Sheets 更新成功:', response);
+                    showLoadingStatus('資料已成功保存到 Google Sheets！');
+                    
+                    // 同時保存到本地 Excel 檔案
+                    const workbook = XLSX.utils.book_new();
+                    const worksheet = XLSX.utils.json_to_sheet(telData);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
+                    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '電話資料.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    setTimeout(removeLoadingStatus, 1000);
+                }).catch(error => {
+                    console.error('Google Sheets 更新失敗:', error);
+                    showLoadingStatus('Google Sheets 更新失敗，請重試');
+                    setTimeout(removeLoadingStatus, 1000);
+                });
+                
+            } catch (error) {
+                console.error('資料保存錯誤:', error);
+                showLoadingStatus('資料保存失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
+            }
         }
     </script>
 </head>
