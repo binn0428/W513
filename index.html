@@ -165,7 +165,7 @@
         // 載入電話資料
         async function loadTelData() {
             try {
-                showLoadingStatus('正在載入電話資料...');
+                showLoadingStatus('正在從 Google Sheets 載入電話資料...');
                 console.log('開始載入電話資料...');
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -202,7 +202,7 @@
         // 載入調度資料
         async function loadDispatchData() {
             try {
-                showLoadingStatus('正在載入調度資料...');
+                showLoadingStatus('正在從 Google Sheets 載入調度資料...');
                 console.log('開始載入調度資料...');
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -430,69 +430,49 @@
         // 更新調度資料的函數
         function updateDispatchData(element, index, field) {
             const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
             if (dispatchData && dispatchData[index]) {
                 dispatchData[index][field] = newValue;
-                // 當資料更新時，同時更新 Google Sheets
-                updateDispatchGoogleSheet();
             }
         }
 
-        async function updateDispatchGoogleSheet() {
-            try {
-                showLoadingStatus('正在更新調度資料到 Google Sheets...');
-                
-                // 將資料轉換為二維陣列格式
-                const headers = Object.keys(dispatchData[0]);
-                const values = [
-                    headers,
-                    ...dispatchData.map(row => headers.map(header => row[header] || ''))
-                ];
-
-                // 更新 Google Sheets
-                await gapi.client.sheets.spreadsheets.values.update({
-                    spreadsheetId: DISPATCH_SPREADSHEET_ID,
-                    range: 'Sheet1!A1',
-                    valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: values
-                    }
-                });
-
-                showLoadingStatus('調度資料更新成功！');
-                setTimeout(removeLoadingStatus, 1000);
-            } catch (error) {
-                console.error('更新調度資料失敗:', error);
-                showLoadingStatus('更新調度資料失敗，請重試');
-                setTimeout(removeLoadingStatus, 2000);
-            }
-        }
-
+        // 保存調度資料到Excel的函數
         async function saveDispatchData(index) {
             try {
-                // 更新 Google Sheets
-                await updateDispatchGoogleSheet();
+                showLoadingStatus('正在保存資料...');
                 
-                // 同時保存到本地 Excel 檔案
-                const workbook = XLSX.utils.book_new();
-                const worksheet = XLSX.utils.json_to_sheet(dispatchData);
-                XLSX.utils.book_append_sheet(workbook, worksheet, "調度資料");
-                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const url = URL.createObjectURL(blob);
+                // 將更新後的資料轉換為工作表
+                const ws = XLSX.utils.json_to_sheet(dispatchData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                // 將工作表轉換為二進制數據
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                
+                // 創建Blob對象
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // 創建FormData對象
+                const formData = new FormData();
+                formData.append('file', blob, 'tel/調度資料.xlsx');
+                
+                // 直接將文件保存到本地
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = URL.createObjectURL(blob);
                 a.download = '調度資料.xlsx';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                URL.revokeObjectURL(a.href);
                 
-                showLoadingStatus('調度資料已成功保存！');
+                showLoadingStatus('資料已更新並下載！');
                 setTimeout(removeLoadingStatus, 1000);
+                
             } catch (error) {
-                console.error('保存調度資料失敗:', error);
-                showLoadingStatus('保存調度資料失敗，請重試');
-                setTimeout(removeLoadingStatus, 2000);
+                console.error('資料更新錯誤:', error);
+                showLoadingStatus('資料更新失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
             }
         }
 
@@ -1406,71 +1386,25 @@
         });
 
         function updateTelData(element, index, field) {
-            const newValue = element.textContent.trim();
-            if (telData && telData[index]) {
-                telData[index][field] = newValue;
-                // 當資料更新時，同時更新 Google Sheets
-                updateGoogleSheet();
-            }
-        }
-
-        async function updateGoogleSheet() {
-            try {
-                showLoadingStatus('正在更新 Google Sheets...');
-                
-                // 將資料轉換為二維陣列格式
-                const headers = Object.keys(telData[0]);
-                const values = [
-                    headers,
-                    ...telData.map(row => headers.map(header => row[header] || ''))
-                ];
-
-                // 更新 Google Sheets
-                await gapi.client.sheets.spreadsheets.values.update({
-                    spreadsheetId: TEL_SPREADSHEET_ID,
-                    range: 'Sheet1!A1',
-                    valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: values
-                    }
-                });
-
-                showLoadingStatus('Google Sheets 更新成功！');
-                setTimeout(removeLoadingStatus, 1000);
-            } catch (error) {
-                console.error('更新 Google Sheets 失敗:', error);
-                showLoadingStatus('更新 Google Sheets 失敗，請重試');
-                setTimeout(removeLoadingStatus, 2000);
-            }
+            const newValue = element.textContent;
+            telData[index][field] = newValue;
         }
 
         function saveTelData(index) {
-            try {
-                // 更新 Google Sheets
-                updateGoogleSheet();
-                
-                // 同時保存到本地 Excel 檔案
-                const workbook = XLSX.utils.book_new();
-                const worksheet = XLSX.utils.json_to_sheet(telData);
-                XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
-                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = '電話資料.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showLoadingStatus('資料已成功保存！');
-                setTimeout(removeLoadingStatus, 1000);
-            } catch (error) {
-                console.error('保存資料失敗:', error);
-                showLoadingStatus('保存資料失敗，請重試');
-                setTimeout(removeLoadingStatus, 2000);
-            }
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(telData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '電話資料.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('資料已成功保存！');
         }
     </script>
 </head>
