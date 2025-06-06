@@ -129,9 +129,9 @@
     </style>
     <script>
         // Google Sheets API 設定
-        const SPREADSHEET_ID = '179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo';
+        const SPREADSHEET_ID = '1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0';
         const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU';
-        const RANGE = 'Sheet1!A:K';
+        const RANGE = '調度資料!A:J';
 
         // 初始化 Google Sheets API
         function initGoogleSheetsAPI() {
@@ -177,10 +177,17 @@
                 console.log('資料標題:', headers);
 
                 telData = values.slice(1).map(row => {
-                    const obj = {};
-                    headers.forEach((header, index) => {
-                        obj[header] = row[index] || '';
-                    });
+                    const obj = {
+                        '分機號碼': row[0] || '',
+                        'C端子位置': row[1] || '',
+                        'LENS': row[2] || '',
+                        '線組編號(機房)': row[3] || '',
+                        '線組編號(現場)': row[4] || '',
+                        '使用單位': row[5] || '',
+                        '裝機位置': row[6] || '',
+                        '副機數量': row[7] || '',
+                        '連絡電話': row[8] || ''
+                    };
                     return obj;
                 });
 
