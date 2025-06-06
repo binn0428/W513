@@ -212,15 +212,21 @@
         }
 
         // 保存資料到 Google Sheets
-        async function saveData(index) {
+        async function saveData() {
             try {
                 showLoadingStatus('正在保存資料到 Google Sheets...');
+                console.log('開始保存資料...');
 
-                const values = telData.map(row => {
-                    return Object.values(row);
-                });
+                // 準備資料
+                const headers = Object.keys(telData[0]);
+                const values = [
+                    headers, // 第一行是標題
+                    ...telData.map(row => headers.map(header => row[header] || ''))
+                ];
 
-                await gapi.client.sheets.spreadsheets.values.update({
+                console.log('準備保存的資料:', values);
+
+                const response = await gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId: SPREADSHEET_ID,
                     range: RANGE,
                     valueInputOption: 'USER_ENTERED',
@@ -229,13 +235,29 @@
                     }
                 });
 
-                showLoadingStatus('資料已成功保存到 Google Sheets！');
-                setTimeout(removeLoadingStatus, 1000);
+                console.log('保存回應:', response);
+
+                if (response.status === 200) {
+                    showLoadingStatus('資料已成功保存到 Google Sheets！');
+                    setTimeout(removeLoadingStatus, 1000);
+                } else {
+                    throw new Error('保存失敗，狀態碼: ' + response.status);
+                }
 
             } catch (error) {
                 console.error('保存資料錯誤:', error);
-                showLoadingStatus('保存資料失敗，請重試');
-                setTimeout(removeLoadingStatus, 1000);
+                let errorMessage = '保存資料失敗: ';
+                
+                if (error.status === 403) {
+                    errorMessage += 'API 存取權限不足，請確認 API Key 是否正確且已啟用 Google Sheets API';
+                } else if (error.status === 404) {
+                    errorMessage += '找不到指定的試算表，請確認試算表 ID 是否正確';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showLoadingStatus(errorMessage);
+                setTimeout(removeLoadingStatus, 3000);
             }
         }
 
@@ -493,6 +515,18 @@
                 originalMatchedText,
                 `<span class="highlight">${originalMatchedText}</span>`
             );
+        }
+
+        // 更新資料的函數
+        function updateTelData(element, index, field) {
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (telData && telData[index]) {
+                telData[index][field] = newValue;
+                // 立即保存到 Google Sheets
+                saveData();
+            }
         }
 
         function searchTel() {
@@ -859,55 +893,12 @@
                                 ${results.map((result, index) => `
                                     <div class="result-card">
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
-                                        <div class="result-item">
-                                            <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號')">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">G450 Port：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">分機種類：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類')">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">DID號碼：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">拆遷紀錄：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">備註：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註')">${highlightText(result['備註'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
+                                        ${Object.entries(result).map(([key, value]) => `
+                                            <div class="result-item">
+                                                <span class="label">${key}：</span>
+                                                <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '${key}')">${value || '無資料'}</span>
+                                            </div>
+                                        `).join('')}
                                     </div>
                                 `).join('')}
                             </div>
@@ -1293,50 +1284,12 @@
                                 ${results.map((result, index) => `
                                     <div class="result-card">
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
-                                        <div class="result-item">
-                                            <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">C端子位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">LENS：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號(機房)：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號(現場)：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">連絡電話：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
+                                        ${Object.entries(result).map(([key, value]) => `
+                                            <div class="result-item">
+                                                <span class="label">${key}：</span>
+                                                <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '${key}')">${value || '無資料'}</span>
+                                            </div>
+                                        `).join('')}
                                     </div>
                                 `).join('')}
                             </div>
@@ -1359,11 +1312,6 @@
                 e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
             }
         });
-
-        function updateTelData(element, index, field) {
-            const newValue = element.textContent;
-            telData[index][field] = newValue;
-        }
 
         function saveTelData(index) {
             const workbook = XLSX.utils.book_new();
