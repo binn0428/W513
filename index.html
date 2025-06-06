@@ -1326,6 +1326,8 @@
         function searchData(searchTerm) {
             if (!window.telephoneData || !window.dispatchData) {
                 console.error('資料尚未載入完成');
+                showLoadingStatus('資料尚未載入完成，請稍候...');
+                setTimeout(removeLoadingStatus, 1000);
                 return;
             }
 
@@ -1335,6 +1337,7 @@
 
             // 搜尋電話資料
             const telResults = window.telephoneData.filter(row => {
+                if (!row || row.length === 0) return false;
                 return row.some(cell => 
                     cell && cell.toString().toLowerCase().includes(searchTerm.toLowerCase())
                 );
@@ -1342,6 +1345,7 @@
 
             // 搜尋調度資料
             const dispatchResults = window.dispatchData.filter(row => {
+                if (!row || row.length === 0) return false;
                 return row.some(cell => 
                     cell && cell.toString().toLowerCase().includes(searchTerm.toLowerCase())
                 );
@@ -1385,33 +1389,68 @@
             }
         }
 
-        // 顯示載入狀態
-        function showLoadingStatus(message) {
-            let statusDiv = document.getElementById('loading-status');
-            if (!statusDiv) {
-                statusDiv = document.createElement('div');
-                statusDiv.id = 'loading-status';
-                statusDiv.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(0, 0, 0, 0.8);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    z-index: 1000;
-                `;
-                document.body.appendChild(statusDiv);
+        // 分機搜尋函數
+        function searchByExtension(extension) {
+            if (!window.telephoneData || !window.dispatchData) {
+                console.error('資料尚未載入完成');
+                showLoadingStatus('資料尚未載入完成，請稍候...');
+                setTimeout(removeLoadingStatus, 1000);
+                return;
             }
-            statusDiv.textContent = message;
-        }
 
-        // 移除載入狀態
-        function removeLoadingStatus() {
-            const statusDiv = document.getElementById('loading-status');
-            if (statusDiv) {
-                statusDiv.remove();
+            // 移除所有現有的結果
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            // 搜尋電話資料
+            const telResults = window.telephoneData.filter(row => {
+                if (!row || row.length === 0) return false;
+                const extCell = row[0]; // 假設分機號碼在第一列
+                return extCell && extCell.toString().includes(extension);
+            });
+
+            // 搜尋調度資料
+            const dispatchResults = window.dispatchData.filter(row => {
+                if (!row || row.length === 0) return false;
+                const extCell = row[0]; // 假設分機號碼在第一列
+                return extCell && extCell.toString().includes(extension);
+            });
+
+            // 顯示結果
+            if (telResults.length > 0) {
+                const telSection = document.createElement('div');
+                telSection.className = 'result-card';
+                telSection.innerHTML = `
+                    <div class="result-header">電話資料搜尋結果 (${telResults.length} 筆)</div>
+                    <div class="result-content">
+                        ${telResults.map(row => `
+                            <div class="result-item">
+                                ${row.map(cell => `<span>${cell || ''}</span>`).join(' | ')}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                resultsContainer.appendChild(telSection);
+            }
+
+            if (dispatchResults.length > 0) {
+                const dispatchSection = document.createElement('div');
+                dispatchSection.className = 'result-card';
+                dispatchSection.innerHTML = `
+                    <div class="result-header">調度資料搜尋結果 (${dispatchResults.length} 筆)</div>
+                    <div class="result-content">
+                        ${dispatchResults.map(row => `
+                            <div class="result-item">
+                                ${row.map(cell => `<span>${cell || ''}</span>`).join(' | ')}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                resultsContainer.appendChild(dispatchSection);
+            }
+
+            if (telResults.length === 0 && dispatchResults.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">找不到符合的資料</div>';
             }
         }
 
@@ -1419,6 +1458,8 @@
         function enableSearch() {
             const searchInput = document.getElementById('search-input');
             const searchButton = document.getElementById('search-button');
+            const extensionInput = document.getElementById('extension-input');
+            const extensionButton = document.getElementById('extension-button');
             
             if (searchInput && searchButton) {
                 searchInput.disabled = false;
@@ -1436,6 +1477,27 @@
                         const searchTerm = searchInput.value.trim();
                         if (searchTerm) {
                             searchData(searchTerm);
+                        }
+                    }
+                });
+            }
+
+            if (extensionInput && extensionButton) {
+                extensionInput.disabled = false;
+                extensionButton.disabled = false;
+                
+                extensionButton.addEventListener('click', () => {
+                    const extension = extensionInput.value.trim();
+                    if (extension) {
+                        searchByExtension(extension);
+                    }
+                });
+
+                extensionInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const extension = extensionInput.value.trim();
+                        if (extension) {
+                            searchByExtension(extension);
                         }
                     }
                 });
