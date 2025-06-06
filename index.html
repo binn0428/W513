@@ -183,13 +183,13 @@
                 }
 
                 const headers = values[0];
-                telData = values.slice(1).map((row, index) => {
+                telData = values.slice(1).map((row, rowIndex) => {
                     const obj = {};
                     headers.forEach((header, colIndex) => {
                         obj[header] = row[colIndex] || '';
+                        // 為每個欄位添加位置資訊
+                        obj[`${header}_position`] = `${String.fromCharCode(65 + colIndex)}${rowIndex + 2}`;
                     });
-                    // 添加行號資訊（index + 2 是因為第一行是標題，且 Google Sheets 是 1-based）
-                    obj._rowIndex = index + 2;
                     return obj;
                 });
 
@@ -222,13 +222,13 @@
                 }
 
                 const headers = values[0];
-                dispatchData = values.slice(1).map((row, index) => {
+                dispatchData = values.slice(1).map((row, rowIndex) => {
                     const obj = {};
                     headers.forEach((header, colIndex) => {
                         obj[header] = row[colIndex] || '';
+                        // 為每個欄位添加位置資訊
+                        obj[`${header}_position`] = `${String.fromCharCode(65 + colIndex)}${rowIndex + 2}`;
                     });
-                    // 添加行號資訊
-                    obj._rowIndex = index + 2;
                     return obj;
                 });
 
@@ -432,12 +432,12 @@
         let dispatchData = null;
 
         // 更新調度資料的函數
-        function updateDispatchData(element, index, field) {
-            const newValue = element.textContent.trim();
-            if (newValue === '無資料') return;
-            
-            if (dispatchData && dispatchData[index]) {
+        function updateDispatchData(element, index, field, position) {
+            const newValue = element.textContent.replace(/\(位置: Sheet1![A-Z]\d+\)/, '').trim();
+            if (dispatchData[index]) {
                 dispatchData[index][field] = newValue;
+                // 直接更新 Google Sheets
+                updateGoogleSheet(DISPATCH_SPREADSHEET_ID, position, newValue);
             }
         }
 
@@ -735,43 +735,58 @@
                                                 <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
                                                     <div class="result-item">
                                                         <span class="label">分機號碼：</span>
-                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                        <span class="value">
+                                                            ${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}
+                                                            <span class="position-info">(位置: Sheet1!${result['分機號碼_position'] || result['分機_position'] || result['Tel_position']})</span>
+                                                        </span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">使用單位：</span>
-                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位', '${result['使用單位_position']}')">
+                                                            ${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}
+                                                            <span class="position-info">(位置: Sheet1!${result['使用單位_position'] || result['單位_position'] || result['部門_position']})</span>
+                                                        </span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號：</span>
-                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號', '${result['線組編號_position']}')">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">G450 Port：</span>
-                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port', '${result['G450 Port_position']}')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">分機種類：</span>
-                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類', '${result['分機種類_position']}')">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">副機數量：</span>
-                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量', '${result['副機數量_position']}')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">DID號碼：</span>
-                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼', '${result['對應DID號碼_position']}')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">裝機位置：</span>
-                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置', '${result['裝機位置_position']}')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">拆遷紀錄：</span>
-                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄', '${result['拆遷記錄_position']}')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">備註：</span>
-                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註', '${result['備註_position']}')">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                 </div>
                                             `).join('')}
@@ -895,51 +910,57 @@
                                         </div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                            <span class="value">
+                                                ${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}
+                                                <span class="position-info">(位置: Sheet1!${result['分機號碼_position'] || result['分機_position'] || result['Tel_position']})</span>
+                                            </span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位', '${result['使用單位_position']}')">
+                                                ${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}
+                                                <span class="position-info">(位置: Sheet1!${result['使用單位_position'] || result['單位_position'] || result['部門_position']})</span>
+                                            </span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號')">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號', '${result['線組編號_position']}')">${highlightText(result['線組編號'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">G450 Port：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port', '${result['G450 Port_position']}')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">分機種類：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類')">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類', '${result['分機種類_position']}')">${highlightText(result['分機種類'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量', '${result['副機數量_position']}')">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">DID號碼：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼', '${result['對應DID號碼_position']}')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置', '${result['裝機位置_position']}')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">拆遷紀錄：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄', '${result['拆遷記錄_position']}')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">備註：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註')">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註', '${result['備註_position']}')">${highlightText(result['備註'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                     </div>
@@ -1180,42 +1201,42 @@
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">C端子位置：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'C端子位置', '${result['C端子位置_position']}')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">LENS：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'LENS', '${result['LENS_position']}')">${highlightText(result['LENS'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(機房)：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(機房)', '${result['線組編號(機房)_position']}')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(現場)：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(現場)', '${result['線組編號(現場)_position']}')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">使用單位：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '使用單位', '${result['使用單位_position']}')">${highlightText(result['使用單位'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">裝機位置：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '裝機位置', '${result['裝機位置_position']}')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">副機數量：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '副機數量', '${result['副機數量_position']}')">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">連絡電話：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '連絡電話', '${result['連絡電話_position']}')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
                                                         <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                 </div>
@@ -1344,42 +1365,42 @@
                                         </div>
                                         <div class="result-item">
                                             <span class="label">C端子位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'C端子位置', '${result['C端子位置_position']}')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">LENS：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'LENS', '${result['LENS_position']}')">${highlightText(result['LENS'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(機房)：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(機房)', '${result['線組編號(機房)_position']}')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(現場)：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(現場)', '${result['線組編號(現場)_position']}')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位', '${result['使用單位_position']}')">${highlightText(result['使用單位'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置', '${result['裝機位置_position']}')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量', '${result['副機數量_position']}')">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">連絡電話：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '連絡電話', '${result['連絡電話_position']}')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
                                             <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                     </div>
@@ -1405,12 +1426,12 @@
             }
         });
 
-        function updateTelData(element, index, field) {
-            const newValue = element.textContent.trim();
+        function updateTelData(element, index, field, position) {
+            const newValue = element.textContent.replace(/\(位置: Sheet1![A-Z]\d+\)/, '').trim();
             if (telData[index]) {
                 telData[index][field] = newValue;
-                // 準備更新 Google Sheets
-                updateGoogleSheet(TEL_SPREADSHEET_ID, telData[index]._rowIndex, field, newValue);
+                // 直接更新 Google Sheets
+                updateGoogleSheet(TEL_SPREADSHEET_ID, position, newValue);
             }
         }
 
@@ -1432,30 +1453,13 @@
         }
 
         // 更新 Google Sheets 的函數
-        async function updateGoogleSheet(spreadsheetId, rowIndex, field, newValue) {
+        async function updateGoogleSheet(spreadsheetId, position, newValue) {
             try {
                 showLoadingStatus('正在更新資料...');
                 
-                // 首先獲取標題行以找到欄位的位置
-                const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: spreadsheetId,
-                    range: 'Sheet1!1:1'
-                });
-                
-                const headers = response.result.values[0];
-                const colIndex = headers.indexOf(field);
-                
-                if (colIndex === -1) {
-                    throw new Error('找不到對應的欄位');
-                }
-                
-                // 計算欄位的 A1 表示法
-                const colLetter = String.fromCharCode(65 + colIndex); // 65 是 'A' 的 ASCII 碼
-                const range = `Sheet1!${colLetter}${rowIndex}`;
-                
                 await gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId: spreadsheetId,
-                    range: range,
+                    range: `Sheet1!${position}`,
                     valueInputOption: 'USER_ENTERED',
                     resource: {
                         values: [[newValue]]
@@ -1471,6 +1475,29 @@
                 setTimeout(removeLoadingStatus, 1000);
             }
         }
+
+        // 添加樣式
+        const style = document.createElement('style');
+        style.textContent = `
+            .position-info {
+                font-size: 0.8em;
+                color: #666;
+                margin-left: 8px;
+            }
+            .result-item .value {
+                display: flex;
+                align-items: center;
+                flex-grow: 1;
+            }
+            [contenteditable="true"] {
+                min-width: 100px;
+                padding: 2px 5px;
+            }
+            .save-btn {
+                margin-left: 8px;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </head>
 <body>
