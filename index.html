@@ -130,19 +130,23 @@
     <script>
         // Google Sheets API 設定
         const SPREADSHEET_ID = '179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo';
-        const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU'; // 請替換成您的 Google API Key
-        const RANGE = 'Sheet1!A:K'; // 根據您的試算表範圍調整
+        const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU';
+        const RANGE = 'Sheet1!A:K';
 
         // 初始化 Google Sheets API
         function initGoogleSheetsAPI() {
-            gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-            }).then(function() {
-                loadData();
-            }).catch(function(error) {
-                console.error('Google Sheets API 初始化失敗:', error);
-                showLoadingStatus('Google Sheets API 初始化失敗，請檢查 API Key');
+            gapi.load('client', async () => {
+                try {
+                    await gapi.client.init({
+                        apiKey: API_KEY,
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                    });
+                    console.log('Google Sheets API 初始化成功');
+                    await loadData();
+                } catch (error) {
+                    console.error('Google Sheets API 初始化失敗:', error);
+                    showLoadingStatus('Google Sheets API 初始化失敗: ' + error.message);
+                }
             });
         }
 
@@ -150,19 +154,28 @@
         async function loadData() {
             try {
                 showLoadingStatus('正在從 Google Sheets 載入資料...');
+                console.log('開始載入資料...');
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: SPREADSHEET_ID,
                     range: RANGE
                 });
 
+                console.log('API 回應:', response);
+
+                if (!response.result || !response.result.values) {
+                    throw new Error('API 回應格式不正確');
+                }
+
                 const values = response.result.values;
-                if (!values || values.length === 0) {
-                    throw new Error('沒有找到資料');
+                if (values.length === 0) {
+                    throw new Error('試算表中沒有資料');
                 }
 
                 // 將資料轉換為物件陣列
                 const headers = values[0];
+                console.log('資料標題:', headers);
+
                 telData = values.slice(1).map(row => {
                     const obj = {};
                     headers.forEach((header, index) => {
@@ -170,6 +183,8 @@
                     });
                     return obj;
                 });
+
+                console.log('處理後的資料:', telData);
 
                 // 啟用搜尋按鈕
                 document.querySelectorAll('button').forEach(button => {
@@ -181,8 +196,18 @@
 
             } catch (error) {
                 console.error('資料載入錯誤:', error);
-                showLoadingStatus('資料載入失敗，請重新整理頁面');
-                setTimeout(removeLoadingStatus, 1000);
+                let errorMessage = '資料載入失敗: ';
+                
+                if (error.status === 403) {
+                    errorMessage += 'API 存取權限不足，請確認 API Key 是否正確且已啟用 Google Sheets API';
+                } else if (error.status === 404) {
+                    errorMessage += '找不到指定的試算表，請確認試算表 ID 是否正確';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showLoadingStatus(errorMessage);
+                setTimeout(removeLoadingStatus, 3000);
             }
         }
 
@@ -216,7 +241,8 @@
 
         // 頁面載入時初始化 Google Sheets API
         window.addEventListener('DOMContentLoaded', () => {
-            gapi.load('client', initGoogleSheetsAPI);
+            console.log('頁面載入完成，開始初始化...');
+            initGoogleSheetsAPI();
             
             // 初始時禁用搜尋按鈕
             document.querySelectorAll('button').forEach(button => {
