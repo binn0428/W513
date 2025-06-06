@@ -144,9 +144,20 @@
                     });
                     console.log('Google Sheets API 初始化成功');
                     await Promise.all([loadTelData(), loadDispatchData()]);
+                    
+                    // 啟用所有按鈕
+                    document.querySelectorAll('button').forEach(button => {
+                        button.disabled = false;
+                    });
+                    
+                    // 顯示完成訊息並設定延遲消失
+                    showLoadingStatus('所有資料載入完成！');
+                    setTimeout(removeLoadingStatus, 500);
+                    
                 } catch (error) {
                     console.error('Google Sheets API 初始化失敗:', error);
                     showLoadingStatus('Google Sheets API 初始化失敗: ' + error.message);
+                    setTimeout(removeLoadingStatus, 1000);
                 }
             });
         }
@@ -181,11 +192,10 @@
                 });
 
                 console.log('電話資料載入完成');
-                showLoadingStatus('電話資料載入完成！');
 
             } catch (error) {
                 console.error('電話資料載入錯誤:', error);
-                showLoadingStatus('電話資料載入失敗: ' + error.message);
+                throw error; // 向上傳遞錯誤
             }
         }
 
@@ -219,11 +229,10 @@
                 });
 
                 console.log('調度資料載入完成');
-                showLoadingStatus('調度資料載入完成！');
 
             } catch (error) {
                 console.error('調度資料載入錯誤:', error);
-                showLoadingStatus('調度資料載入失敗: ' + error.message);
+                throw error; // 向上傳遞錯誤
             }
         }
 
