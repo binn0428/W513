@@ -1386,61 +1386,70 @@
         });
 
         function updateTelData(element, index, field) {
-            const newValue = element.textContent;
-            telData[index][field] = newValue;
+            const newValue = element.textContent.trim();
+            if (telData && telData[index]) {
+                telData[index][field] = newValue;
+                // 當資料更新時，同時更新 Google Sheets
+                updateGoogleSheet();
+            }
         }
 
-        async function saveTelData(index) {
+        async function updateGoogleSheet() {
             try {
-                showLoadingStatus('正在保存資料到 Google Sheets...');
+                showLoadingStatus('正在更新 Google Sheets...');
+                
+                // 將資料轉換為二維陣列格式
+                const headers = Object.keys(telData[0]);
+                const values = [
+                    headers,
+                    ...telData.map(row => headers.map(header => row[header] || ''))
+                ];
 
-                // 準備要更新的資料
-                const values = telData.map(row => [
-                    row['分機號碼'] || '',
-                    row['線組編號'] || '',
-                    row['使用單位'] || '',
-                    row['裝機位置'] || '',
-                    row['分機種類'] || '',
-                    row['副機數量'] || '',
-                    row['對應DID號碼'] || '',
-                    row['G450 Port'] || '',
-                    row['拆遷記錄'] || '',
-                    row['備註'] || ''
-                ]);
-
-                // 加入標題列
-                values.unshift([
-                    '分機號碼',
-                    '線組編號',
-                    '使用單位',
-                    '裝機位置',
-                    '分機種類',
-                    '副機數量',
-                    '對應DID號碼',
-                    'G450 Port',
-                    '拆遷記錄',
-                    '備註'
-                ]);
-
-                // 使用 Google Sheets API 更新資料
+                // 更新 Google Sheets
                 await gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId: TEL_SPREADSHEET_ID,
-                    range: 'Sheet1!B:K',
+                    range: 'Sheet1!A1',
                     valueInputOption: 'USER_ENTERED',
                     resource: {
-                        range: 'Sheet1!B:K',
-                        majorDimension: 'ROWS',
                         values: values
                     }
                 });
 
-                showLoadingStatus('資料已成功保存到 Google Sheets！');
+                showLoadingStatus('Google Sheets 更新成功！');
                 setTimeout(removeLoadingStatus, 1000);
-
             } catch (error) {
-                console.error('保存資料錯誤:', error);
-                showLoadingStatus('保存資料失敗，請重試');
+                console.error('更新 Google Sheets 失敗:', error);
+                showLoadingStatus('更新 Google Sheets 失敗，請重試');
+                setTimeout(removeLoadingStatus, 2000);
+            }
+        }
+
+        function saveTelData(index) {
+            try {
+                // 更新 Google Sheets
+                updateGoogleSheet();
+                
+                // 同時保存到本地 Excel 檔案
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(telData);
+                XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '電話資料.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showLoadingStatus('資料已成功保存！');
                 setTimeout(removeLoadingStatus, 1000);
+            } catch (error) {
+                console.error('保存資料失敗:', error);
+                showLoadingStatus('保存資料失敗，請重試');
+                setTimeout(removeLoadingStatus, 2000);
             }
         }
     </script>
