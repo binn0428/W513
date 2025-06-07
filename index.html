@@ -428,52 +428,92 @@
         let dispatchData = null;
 
         // 更新調度資料的函數
-        function updateDispatchData(element, index, field) {
+        async function updateDispatchData(element, index, field) {
             const newValue = element.textContent.trim();
             if (newValue === '無資料') return;
             
             if (dispatchData && dispatchData[index]) {
                 dispatchData[index][field] = newValue;
+                
+                try {
+                    showLoadingStatus('正在更新 Google Sheets...');
+                    
+                    // 找到對應的行號（加2是因為第一行是標題，且 Google Sheets 是 1-based index）
+                    const rowIndex = index + 2;
+                    
+                    // 找到對應的欄位索引
+                    const headers = Object.keys(dispatchData[0]);
+                    const columnIndex = headers.indexOf(field) + 1; // 1-based index
+                    
+                    // 使用 Google Sheets API 更新單個儲存格
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: DISPATCH_SPREADSHEET_ID,
+                        range: `Sheet1!${String.fromCharCode(64 + columnIndex)}${rowIndex}`, // 轉換為 A1 表示法
+                        valueInputOption: 'USER_ENTERED',
+                        resource: {
+                            values: [[newValue]]
+                        }
+                    });
+                    
+                    showLoadingStatus('資料已成功更新到 Google Sheets！');
+                    setTimeout(removeLoadingStatus, 1000);
+                    
+                } catch (error) {
+                    console.error('更新 Google Sheets 失敗:', error);
+                    showLoadingStatus('更新 Google Sheets 失敗，請重試');
+                    setTimeout(removeLoadingStatus, 1000);
+                }
             }
         }
 
-        // 保存調度資料到Excel的函數
-        async function saveDispatchData(index) {
-            try {
-                showLoadingStatus('正在保存資料...');
+        // 更新分機資料的函數
+        async function updateTelData(element, index, field) {
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (telData && telData[index]) {
+                telData[index][field] = newValue;
                 
-                // 將更新後的資料轉換為工作表
-                const ws = XLSX.utils.json_to_sheet(dispatchData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-                
-                // 將工作表轉換為二進制數據
-                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                
-                // 創建Blob對象
-                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                
-                // 創建FormData對象
-                const formData = new FormData();
-                formData.append('file', blob, 'tel/調度資料.xlsx');
-                
-                // 直接將文件保存到本地
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = '調度資料.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(a.href);
-                
-                showLoadingStatus('資料已更新並下載！');
-                setTimeout(removeLoadingStatus, 1000);
-                
-            } catch (error) {
-                console.error('資料更新錯誤:', error);
-                showLoadingStatus('資料更新失敗，請重試');
-                setTimeout(removeLoadingStatus, 1000);
+                try {
+                    showLoadingStatus('正在更新 Google Sheets...');
+                    
+                    // 找到對應的行號（加2是因為第一行是標題，且 Google Sheets 是 1-based index）
+                    const rowIndex = index + 2;
+                    
+                    // 找到對應的欄位索引
+                    const headers = Object.keys(telData[0]);
+                    const columnIndex = headers.indexOf(field) + 1; // 1-based index
+                    
+                    // 使用 Google Sheets API 更新單個儲存格
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: TEL_SPREADSHEET_ID,
+                        range: `Sheet1!${String.fromCharCode(64 + columnIndex)}${rowIndex}`, // 轉換為 A1 表示法
+                        valueInputOption: 'USER_ENTERED',
+                        resource: {
+                            values: [[newValue]]
+                        }
+                    });
+                    
+                    showLoadingStatus('資料已成功更新到 Google Sheets！');
+                    setTimeout(removeLoadingStatus, 1000);
+                    
+                } catch (error) {
+                    console.error('更新 Google Sheets 失敗:', error);
+                    showLoadingStatus('更新 Google Sheets 失敗，請重試');
+                    setTimeout(removeLoadingStatus, 1000);
+                }
             }
+        }
+
+        // 移除保存按鈕相關的程式碼，因為現在會即時同步到 Google Sheets
+        function saveTelData(index) {
+            showLoadingStatus('資料已自動同步到 Google Sheets');
+            setTimeout(removeLoadingStatus, 1000);
+        }
+
+        function saveDispatchData(index) {
+            showLoadingStatus('資料已自動同步到 Google Sheets');
+            setTimeout(removeLoadingStatus, 1000);
         }
 
         // 添加載入狀態指示器
@@ -1386,7 +1426,7 @@
         });
 
         function updateTelData(element, index, field) {
-            const newValue = element.textContent;
+            const newValue = element.textContent.trim();
             telData[index][field] = newValue;
         }
 
