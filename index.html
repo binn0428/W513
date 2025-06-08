@@ -434,6 +434,17 @@
             
             if (dispatchData && dispatchData[index]) {
                 dispatchData[index][field] = newValue;
+                
+                // 將更新後的資料同步到 Google Sheets
+                const values = dispatchData.map(row => {
+                    return Object.values(row);
+                });
+                
+                updateValues(DISPATCH_SPREADSHEET_ID, RANGE, 'USER_ENTERED', values, (response) => {
+                    console.log('調度資料已更新到 Google Sheets');
+                    showLoadingStatus('資料已成功更新！');
+                    setTimeout(removeLoadingStatus, 1000);
+                });
             }
         }
 
@@ -1388,6 +1399,67 @@
         function updateTelData(element, index, field) {
             const newValue = element.textContent;
             telData[index][field] = newValue;
+            
+            // 將更新後的資料同步到 Google Sheets
+            const values = telData.map(row => {
+                return Object.values(row);
+            });
+            
+            updateValues(TEL_SPREADSHEET_ID, RANGE, 'USER_ENTERED', values, (response) => {
+                console.log('電話資料已更新到 Google Sheets');
+                showLoadingStatus('資料已成功更新！');
+                setTimeout(removeLoadingStatus, 1000);
+            });
+        }
+
+        function updateDispatchData(element, index, field) {
+            const newValue = element.textContent;
+            if (newValue === '無資料') return;
+            
+            if (dispatchData && dispatchData[index]) {
+                dispatchData[index][field] = newValue;
+                
+                // 將更新後的資料同步到 Google Sheets
+                const values = dispatchData.map(row => {
+                    return Object.values(row);
+                });
+                
+                updateValues(DISPATCH_SPREADSHEET_ID, RANGE, 'USER_ENTERED', values, (response) => {
+                    console.log('調度資料已更新到 Google Sheets');
+                    showLoadingStatus('資料已成功更新！');
+                    setTimeout(removeLoadingStatus, 1000);
+                });
+            }
+        }
+
+        // 添加 updateValues 函數
+        function updateValues(spreadsheetId, range, valueInputOption, _values, callback) {
+            const body = {
+                values: _values
+            };
+            
+            showLoadingStatus('正在更新資料...');
+            
+            try {
+                gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: spreadsheetId,
+                    range: range,
+                    valueInputOption: valueInputOption,
+                    resource: body
+                }).then((response) => {
+                    const result = response.result;
+                    console.log(`${result.updatedCells} cells updated.`);
+                    if (callback) callback(response);
+                }).catch((error) => {
+                    console.error('更新資料錯誤:', error);
+                    showLoadingStatus('更新資料失敗，請重試');
+                    setTimeout(removeLoadingStatus, 1000);
+                });
+            } catch (err) {
+                console.error('更新資料錯誤:', err);
+                showLoadingStatus('更新資料失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
+            }
         }
 
         function saveTelData(index) {
