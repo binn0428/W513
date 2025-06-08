@@ -165,7 +165,13 @@
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
-                callback: '', // 定義於後續使用時
+                callback: (resp) => {
+                    if (resp.error !== undefined) {
+                        throw resp;
+                    }
+                    console.log('已獲得授權');
+                    initializeApp();
+                }
             });
             gisInited = true;
             maybeEnableButtons();
