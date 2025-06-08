@@ -134,10 +134,13 @@
         const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU';
         const CLIENT_ID = '163244449037-nmot6afkrdpaull9pn5cotba4v0m4dpf.apps.googleusercontent.com ';
         const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+        const RANGE = 'Sheet1!A:Z'; // 添加 RANGE 變數定義
 
         let tokenClient;
         let gapiInited = false;
         let gisInited = false;
+        let telData = null;
+        let dispatchData = null;
 
         // 初始化 Google API 客戶端
         function gapiLoaded() {
@@ -258,11 +261,13 @@
                     return obj;
                 });
 
-                console.log('電話資料載入完成');
+                console.log('電話資料載入完成，資料筆數：', telData.length);
+                showLoadingStatus('電話資料載入完成');
 
             } catch (error) {
                 console.error('電話資料載入錯誤:', error);
-                throw error; // 向上傳遞錯誤
+                showLoadingStatus('電話資料載入失敗: ' + error.message);
+                throw error;
             }
         }
 
@@ -295,11 +300,13 @@
                     return obj;
                 });
 
-                console.log('調度資料載入完成');
+                console.log('調度資料載入完成，資料筆數：', dispatchData.length);
+                showLoadingStatus('調度資料載入完成');
 
             } catch (error) {
                 console.error('調度資料載入錯誤:', error);
-                throw error; // 向上傳遞錯誤
+                showLoadingStatus('調度資料載入失敗: ' + error.message);
+                throw error;
             }
         }
 
@@ -480,8 +487,7 @@
         }
 
         // 頁面載入時自動讀取分機資料和調度資料
-        let telData = null;
-        let dispatchData = null;
+        // 移除重複宣告的變數
 
         // 更新調度資料的函數
         async function updateDispatchData(element, index, field) {
@@ -650,6 +656,11 @@
             const input = document.getElementById('telSearchInput').value.trim();
             if (input === "") {
                 alert('請輸入搜尋內容');
+                return;
+            }
+
+            if (!telData || telData.length === 0) {
+                alert('電話資料尚未載入完成，請稍後再試');
                 return;
             }
 
