@@ -167,10 +167,11 @@
                 scope: SCOPES,
                 callback: (resp) => {
                     if (resp.error !== undefined) {
-                        throw resp;
+                        showLoadingStatus('授權失敗: ' + resp.error);
+                        return;
                     }
                     console.log('已獲得授權');
-                    initializeApp();
+                    loadAllData();
                 }
             });
             gisInited = true;
@@ -179,84 +180,31 @@
 
         function maybeEnableButtons() {
             if (gapiInited && gisInited) {
-                initializeApp();
+                console.log('API 初始化完成，請求授權...');
+                tokenClient.requestAccessToken({prompt: 'consent'});
             }
         }
 
-        async function getToken() {
+        // 新增一個函數來處理所有資料的載入
+        async function loadAllData() {
             try {
-                // 確保 tokenClient 已初始化
-                if (!tokenClient) {
-                    throw new Error('Token client not initialized');
-                }
-
-                // 請求新的訪問令牌
-                return new Promise((resolve, reject) => {
-                    try {
-                        tokenClient.callback = async (resp) => {
-                            if (resp.error !== undefined) {
-                                reject(resp);
-                            }
-                            resolve(resp);
-                        };
-                        tokenClient.requestAccessToken({prompt: 'consent'});
-                    } catch (err) {
-                        reject(err);
-                    }
-                });
-            } catch (err) {
-                console.error('Error getting token:', err);
-                throw err;
-            }
-        }
-
-        // 初始化應用程式
-        async function initializeApp() {
-            try {
-                showLoadingStatus('正在初始化應用程式...');
-                
-                // 檢查是否已經獲得訪問權限
-                if (!gapi.client.getToken()) {
-                    // 如果沒有 token，請求用戶授權
-                    await new Promise((resolve, reject) => {
-                        try {
-                            tokenClient.callback = async (resp) => {
-                                if (resp.error !== undefined) {
-                                    reject(resp);
-                                }
-                                showLoadingStatus('已獲得授權，正在載入資料...');
-                                resolve(resp);
-                            };
-                            tokenClient.requestAccessToken({prompt: 'consent'});
-                        } catch (err) {
-                            console.error('授權請求失敗:', err);
-                            reject(err);
-                        }
-                    });
-                }
-
+                showLoadingStatus('正在載入資料...');
                 console.log('開始載入資料...');
                 
                 // 並行載入電話和調度資料
-                try {
-                    await Promise.all([loadTelData(), loadDispatchData()]);
-                    console.log('所有資料載入完成');
-                    showLoadingStatus('所有資料載入完成！');
-                    
-                    // 啟用所有按鈕
-                    document.querySelectorAll('button').forEach(button => {
-                        button.disabled = false;
-                    });
-                    
-                    setTimeout(removeLoadingStatus, 1000);
-                } catch (error) {
-                    console.error('資料載入失敗:', error);
-                    showLoadingStatus('資料載入失敗: ' + error.message);
-                    throw error;
-                }
+                await Promise.all([loadTelData(), loadDispatchData()]);
+                console.log('所有資料載入完成');
+                showLoadingStatus('所有資料載入完成！');
+                
+                // 啟用所有按鈕
+                document.querySelectorAll('button').forEach(button => {
+                    button.disabled = false;
+                });
+                
+                setTimeout(removeLoadingStatus, 1000);
             } catch (error) {
-                console.error('初始化失敗:', error);
-                showLoadingStatus('初始化失敗: ' + error.message);
+                console.error('資料載入失敗:', error);
+                showLoadingStatus('資料載入失敗: ' + error.message);
                 // 重新啟用按鈕，讓用戶可以重試
                 document.querySelectorAll('button').forEach(button => {
                     button.disabled = false;
@@ -264,26 +212,13 @@
             }
         }
 
-        // 頁面載入時初始化
-        window.onload = function() {
-            console.log('頁面載入完成，等待 API 初始化...');
-            showLoadingStatus('正在初始化...');
-            // 禁用所有按鈕，直到初始化完成
-            document.querySelectorAll('button').forEach(button => {
-                button.disabled = true;
-            });
-        }
+        // 移除 getToken 和 initializeApp 函數，因為不再需要
 
-        // 載入電話資料
+        // 修改 loadTelData 函數
         async function loadTelData() {
             try {
                 showLoadingStatus('正在載入電話資料...');
                 console.log('開始載入電話資料...');
-                
-                // 確保已經獲得授權
-                if (!gapi.client.getToken()) {
-                    throw new Error('尚未獲得授權，請先登入');
-                }
 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: TEL_SPREADSHEET_ID,
@@ -318,16 +253,11 @@
             }
         }
 
-        // 載入調度資料
+        // 修改 loadDispatchData 函數
         async function loadDispatchData() {
             try {
                 showLoadingStatus('正在載入調度資料...');
                 console.log('開始載入調度資料...');
-                
-                // 確保已經獲得授權
-                if (!gapi.client.getToken()) {
-                    throw new Error('尚未獲得授權，請先登入');
-                }
 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: DISPATCH_SPREADSHEET_ID,
