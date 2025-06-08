@@ -129,7 +129,8 @@
     </style>
     <script>
         // Google Sheets API 設定
-        const SPREADSHEET_ID = '179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo';
+        const DISPATCH_SPREADSHEET_ID = '1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0';
+        const TEL_SPREADSHEET_ID = '179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo';
         const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU';
         const RANGE = 'Sheet1!A:K';
 
@@ -142,40 +143,46 @@
                         discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
                     });
                     console.log('Google Sheets API 初始化成功');
-                    await loadData();
+                    await Promise.all([loadTelData(), loadDispatchData()]);
+                    
+                    // 啟用所有按鈕
+                    document.querySelectorAll('button').forEach(button => {
+                        button.disabled = false;
+                    });
+                    
+                    // 顯示完成訊息並設定延遲消失
+                    showLoadingStatus('所有資料載入完成！');
+                    setTimeout(removeLoadingStatus, 500);
+                    
                 } catch (error) {
                     console.error('Google Sheets API 初始化失敗:', error);
                     showLoadingStatus('Google Sheets API 初始化失敗: ' + error.message);
+                    setTimeout(removeLoadingStatus, 1000);
                 }
             });
         }
 
-        // 載入 Google Sheets 資料
-        async function loadData() {
+        // 載入電話資料
+        async function loadTelData() {
             try {
-                showLoadingStatus('正在從 Google Sheets 載入資料...');
-                console.log('開始載入資料...');
+                showLoadingStatus('正在載入電話資料...');
+                console.log('開始載入電話資料...');
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: SPREADSHEET_ID,
+                    spreadsheetId: TEL_SPREADSHEET_ID,
                     range: RANGE
                 });
 
-                console.log('API 回應:', response);
-
                 if (!response.result || !response.result.values) {
-                    throw new Error('API 回應格式不正確');
+                    throw new Error('電話資料 API 回應格式不正確');
                 }
 
                 const values = response.result.values;
                 if (values.length === 0) {
-                    throw new Error('試算表中沒有資料');
+                    throw new Error('電話資料試算表中沒有資料');
                 }
 
-                // 將資料轉換為物件陣列
                 const headers = values[0];
-                console.log('資料標題:', headers);
-
                 telData = values.slice(1).map(row => {
                     const obj = {};
                     headers.forEach((header, index) => {
@@ -184,30 +191,48 @@
                     return obj;
                 });
 
-                console.log('處理後的資料:', telData);
-
-                // 啟用搜尋按鈕
-                document.querySelectorAll('button').forEach(button => {
-                    button.disabled = false;
-                });
-
-                showLoadingStatus('資料載入完成！');
-                setTimeout(removeLoadingStatus, 1000);
+                console.log('電話資料載入完成');
 
             } catch (error) {
-                console.error('資料載入錯誤:', error);
-                let errorMessage = '資料載入失敗: ';
+                console.error('電話資料載入錯誤:', error);
+                throw error; // 向上傳遞錯誤
+            }
+        }
+
+        // 載入調度資料
+        async function loadDispatchData() {
+            try {
+                showLoadingStatus('正在載入調度資料...');
+                console.log('開始載入調度資料...');
                 
-                if (error.status === 403) {
-                    errorMessage += 'API 存取權限不足，請確認 API Key 是否正確且已啟用 Google Sheets API';
-                } else if (error.status === 404) {
-                    errorMessage += '找不到指定的試算表，請確認試算表 ID 是否正確';
-                } else {
-                    errorMessage += error.message;
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: DISPATCH_SPREADSHEET_ID,
+                    range: RANGE
+                });
+
+                if (!response.result || !response.result.values) {
+                    throw new Error('調度資料 API 回應格式不正確');
                 }
-                
-                showLoadingStatus(errorMessage);
-                setTimeout(removeLoadingStatus, 3000);
+
+                const values = response.result.values;
+                if (values.length === 0) {
+                    throw new Error('調度資料試算表中沒有資料');
+                }
+
+                const headers = values[0];
+                dispatchData = values.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
+                    });
+                    return obj;
+                });
+
+                console.log('調度資料載入完成');
+
+            } catch (error) {
+                console.error('調度資料載入錯誤:', error);
+                throw error; // 向上傳遞錯誤
             }
         }
 
@@ -221,7 +246,7 @@
                 });
 
                 await gapi.client.sheets.spreadsheets.values.update({
-                    spreadsheetId: SPREADSHEET_ID,
+                    spreadsheetId: TEL_SPREADSHEET_ID,
                     range: RANGE,
                     valueInputOption: 'USER_ENTERED',
                     resource: {
