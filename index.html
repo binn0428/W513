@@ -132,9 +132,9 @@
         const DISPATCH_SPREADSHEET_ID = '1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0';
         const TEL_SPREADSHEET_ID = '179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo';
         const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU';
-        const CLIENT_ID = '163244449037-nmot6afkrdpaull9pn5cotba4v0m4dpf.apps.googleusercontent.com ';
-        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-        const RANGE = 'Sheet1!A:Z'; // 添加 RANGE 變數定義
+        const CLIENT_ID = '163244449037-nmot6afkrdpaull9pn5cotba4v0m4dpf.apps.googleusercontent.com';
+        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+        const RANGE = 'Sheet1!A:Z';
 
         let tokenClient;
         let gapiInited = false;
@@ -142,59 +142,60 @@
         let telData = null;
         let dispatchData = null;
 
-        // 初始化 Google API 客戶端
         function gapiLoaded() {
-            gapi.load('client', initializeGapiClient);
-        }
-
-        async function initializeGapiClient() {
-            try {
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                });
-                gapiInited = true;
-                maybeEnableButtons();
-            } catch (err) {
-                console.error('Error initializing GAPI client:', err);
-                showLoadingStatus('GAPI 初始化失敗: ' + err.message);
-            }
+            gapi.load('client', async () => {
+                try {
+                    await gapi.client.init({
+                        apiKey: API_KEY,
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                    });
+                    gapiInited = true;
+                    maybeEnableButtons();
+                } catch (err) {
+                    console.error('Error initializing GAPI client:', err);
+                    showLoadingStatus('GAPI 初始化失敗: ' + err.message);
+                }
+            });
         }
 
         function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: (resp) => {
-                    if (resp.error !== undefined) {
-                        showLoadingStatus('授權失敗: ' + resp.error);
-                        return;
+            try {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    prompt: 'consent',
+                    callback: async (response) => {
+                        if (response.error !== undefined) {
+                            showLoadingStatus('授權失敗: ' + response.error);
+                            return;
+                        }
+                        showLoadingStatus('授權成功，正在載入資料...');
+                        await loadAllData();
                     }
-                    console.log('已獲得授權');
-                    loadAllData();
-                }
-            });
-            gisInited = true;
-            maybeEnableButtons();
+                });
+                gisInited = true;
+                maybeEnableButtons();
+            } catch (err) {
+                console.error('Error initializing token client:', err);
+                showLoadingStatus('Token Client 初始化失敗: ' + err.message);
+            }
         }
 
         function maybeEnableButtons() {
             if (gapiInited && gisInited) {
-                console.log('API 初始化完成，請求授權...');
-                tokenClient.requestAccessToken({prompt: 'consent'});
+                showLoadingStatus('正在請求授權...');
+                tokenClient.requestAccessToken();
             }
         }
 
-        // 新增一個函數來處理所有資料的載入
         async function loadAllData() {
             try {
                 showLoadingStatus('正在載入資料...');
-                console.log('開始載入資料...');
                 
                 // 並行載入電話和調度資料
                 await Promise.all([loadTelData(), loadDispatchData()]);
-                console.log('所有資料載入完成');
-                showLoadingStatus('所有資料載入完成！');
+                
+                showLoadingStatus('資料載入完成！');
                 
                 // 啟用所有按鈕
                 document.querySelectorAll('button').forEach(button => {
@@ -205,33 +206,32 @@
             } catch (error) {
                 console.error('資料載入失敗:', error);
                 showLoadingStatus('資料載入失敗: ' + error.message);
-                // 重新啟用按鈕，讓用戶可以重試
+                // 啟用按鈕，讓用戶可以重試
                 document.querySelectorAll('button').forEach(button => {
                     button.disabled = false;
                 });
             }
         }
 
-        // 移除 getToken 和 initializeApp 函數，因為不再需要
-
         // 修改 loadTelData 函數
         async function loadTelData() {
             try {
                 showLoadingStatus('正在載入電話資料...');
-                console.log('開始載入電話資料...');
-
+                
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: TEL_SPREADSHEET_ID,
-                    range: RANGE
+                    range: RANGE,
+                    valueRenderOption: 'UNFORMATTED_VALUE',
+                    dateTimeRenderOption: 'FORMATTED_STRING'
                 });
 
                 if (!response.result || !response.result.values) {
-                    throw new Error('電話資料 API 回應格式不正確');
+                    throw new Error('電話資料格式不正確');
                 }
 
                 const values = response.result.values;
                 if (values.length === 0) {
-                    throw new Error('電話資料試算表中沒有資料');
+                    throw new Error('電話資料為空');
                 }
 
                 const headers = values[0];
@@ -243,12 +243,9 @@
                     return obj;
                 });
 
-                console.log('電話資料載入完成，資料筆數：', telData.length);
-                showLoadingStatus('電話資料載入完成');
-
+                console.log('電話資料載入完成，筆數:', telData.length);
             } catch (error) {
-                console.error('電話資料載入錯誤:', error);
-                showLoadingStatus('電話資料載入失敗: ' + error.message);
+                console.error('電話資料載入失敗:', error);
                 throw error;
             }
         }
@@ -257,20 +254,21 @@
         async function loadDispatchData() {
             try {
                 showLoadingStatus('正在載入調度資料...');
-                console.log('開始載入調度資料...');
-
+                
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: DISPATCH_SPREADSHEET_ID,
-                    range: RANGE
+                    range: RANGE,
+                    valueRenderOption: 'UNFORMATTED_VALUE',
+                    dateTimeRenderOption: 'FORMATTED_STRING'
                 });
 
                 if (!response.result || !response.result.values) {
-                    throw new Error('調度資料 API 回應格式不正確');
+                    throw new Error('調度資料格式不正確');
                 }
 
                 const values = response.result.values;
                 if (values.length === 0) {
-                    throw new Error('調度資料試算表中沒有資料');
+                    throw new Error('調度資料為空');
                 }
 
                 const headers = values[0];
@@ -282,14 +280,19 @@
                     return obj;
                 });
 
-                console.log('調度資料載入完成，資料筆數：', dispatchData.length);
-                showLoadingStatus('調度資料載入完成');
-
+                console.log('調度資料載入完成，筆數:', dispatchData.length);
             } catch (error) {
-                console.error('調度資料載入錯誤:', error);
-                showLoadingStatus('調度資料載入失敗: ' + error.message);
+                console.error('調度資料載入失敗:', error);
                 throw error;
             }
+        }
+
+        // 頁面載入時的初始化
+        window.onload = function() {
+            showLoadingStatus('正在初始化...');
+            document.querySelectorAll('button').forEach(button => {
+                button.disabled = true;
+            });
         }
 
         // 保存資料到 Google Sheets
@@ -467,9 +470,6 @@
                 alert('未找到符合的圖片');
             }
         }
-
-        // 頁面載入時自動讀取分機資料和調度資料
-        // 移除重複宣告的變數
 
         // 更新調度資料的函數
         async function updateDispatchData(element, index, field) {
