@@ -135,6 +135,7 @@
         const CLIENT_ID = '163244449037-nmot6afkrdpaull9pn5cotba4v0m4dpf.apps.googleusercontent.com';
         const CLIENT_SECRET = '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';
         const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+        const RANGE = 'Sheet1!A:Z'; // 添加這行，定義讀取範圍從A列到Z列
 
         let tokenClient;
         let gapiInited = false;
@@ -238,7 +239,8 @@
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: TEL_SPREADSHEET_ID,
-                    range: RANGE
+                    range: RANGE,
+                    valueInputOption: 'USER_ENTERED'
                 });
 
                 if (!response.result || !response.result.values) {
@@ -260,10 +262,14 @@
                 });
 
                 console.log('電話資料載入完成');
+                showLoadingStatus('電話資料載入完成！');
+                setTimeout(removeLoadingStatus, 1000);
 
             } catch (error) {
                 console.error('電話資料載入錯誤:', error);
-                throw error; // 向上傳遞錯誤
+                showLoadingStatus('電話資料載入失敗: ' + error.message);
+                setTimeout(removeLoadingStatus, 2000);
+                throw error;
             }
         }
 
@@ -275,7 +281,8 @@
                 
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: DISPATCH_SPREADSHEET_ID,
-                    range: RANGE
+                    range: RANGE,
+                    valueInputOption: 'USER_ENTERED'
                 });
 
                 if (!response.result || !response.result.values) {
@@ -297,10 +304,14 @@
                 });
 
                 console.log('調度資料載入完成');
+                showLoadingStatus('調度資料載入完成！');
+                setTimeout(removeLoadingStatus, 1000);
 
             } catch (error) {
                 console.error('調度資料載入錯誤:', error);
-                throw error; // 向上傳遞錯誤
+                showLoadingStatus('調度資料載入失敗: ' + error.message);
+                setTimeout(removeLoadingStatus, 2000);
+                throw error;
             }
         }
 
