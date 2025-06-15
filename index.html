@@ -535,418 +535,241 @@
             });
 
             if (results.length > 0) {
-                // 準備所有結果的 Telegram 訊息內容
-                let telegramMessage = '分機搜尋結果:\n';
-                results.forEach((result, index) => {
-                    telegramMessage += `\n--- 結果 ${index + 1} / ${results.length} ---\n`;
-                    telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
-                    telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
-                    telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
-                    telegramMessage += `G450 Port: ${result['G450 Port'] || '無資料'}\n`;
-                    telegramMessage += `分機種類: ${result['分機種類'] || '無資料'}\n`;
-                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
-                    telegramMessage += `DID號碼: ${result['對應DID號碼'] || '無資料'}\n`;
-                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
-                    telegramMessage += `拆遷紀錄: ${result['拆遷記錄'] || '無資料'}\n`;
-                    telegramMessage += `備註: ${result['備註'] || '無資料'}\n`;
+                // 根據匹配欄位分類
+                const groupedResults = {};
+                const fields = ['分機號碼', '使用單位', '線組編號', 'G450 Port', '分機種類', '副機數量', 'DID號碼', '裝機位置', '拆遷紀錄', '備註'];
+                
+                // 追蹤所有已處理的分機號碼
+                const processedPhoneNumbers = new Set();
+                let totalUniqueResults = 0;
+                
+                results.forEach(result => {
+                    const phoneNumber = result['分機號碼'] || result['分機'] || result['Tel'] || '';
+                    if (!processedPhoneNumbers.has(phoneNumber)) {
+                        processedPhoneNumbers.add(phoneNumber);
+                        totalUniqueResults++;
+                    }
+                    
+                    fields.forEach(field => {
+                        const value = result[field];
+                        if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
+                            if (!groupedResults[field]) {
+                                groupedResults[field] = new Set();
+                            }
+                            groupedResults[field].add(phoneNumber);
+                        }
+                    });
                 });
 
-                // 發送到 Telegram
-                const botToken = '5615970654:AAEiOd-m4fmQkps70wkZlvcwLvguk12FLNk';
-                const chatId = '-677659610';
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: telegramMessage
-                    })
-                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
-
-                // 如果結果超過2筆，顯示分類視窗
-                if (results.length > 2) {
-                    // 根據匹配欄位分類
-                    const groupedResults = {};
-                    const fields = ['分機號碼', '使用單位', '線組編號', 'G450 Port', '分機種類', '副機數量', 'DID號碼', '裝機位置', '拆遷紀錄', '備註'];
-                    
-                    // 為每個結果創建一個唯一標識
-                    const processedResults = new Set();
-                    
-                    results.forEach(result => {
-                        let resultId = result['分機號碼'] || ''; // 使用分機號碼作為唯一標識
-                        
-                        fields.forEach(field => {
-                            const value = result[field];
-                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                                if (!groupedResults[field]) {
-                                    groupedResults[field] = [];
-                                }
-                                // 只有當這個結果在這個分類中還沒有出現過時才添加
-                                if (!groupedResults[field].some(r => r['分機號碼'] === result['分機號碼'])) {
-                                    groupedResults[field].push(result);
-                                }
-                            }
-                        });
-                    });
-
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>分機搜尋結果分類</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f5f5f5;
-                                    min-height: 100vh;
-                                }
-                                .category-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                    padding: 20px;
-                                }
-                                .category-card {
-                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-                                    padding: 20px;
-                                    margin-bottom: 20px;
-                                    border-radius: 15px;
-                                    box-shadow: 5px 5px 15px #d1d1d1,
-                                                -5px -5px 15px #ffffff;
-                                    cursor: pointer;
-                                    transition: all 0.3s ease;
-                                }
-                                .category-card:hover {
-                                    transform: translateY(-3px);
-                                    box-shadow: 8px 8px 20px #d1d1d1,
-                                                -8px -8px 20px #ffffff;
-                                }
-                                .category-card:active {
-                                    transform: translateY(1px);
-                                    box-shadow: inset 4px 4px 8px #d1d1d1,
-                                                inset -4px -4px 8px #ffffff;
-                                }
-                                .category-card h3 {
-                                    margin: 0;
-                                    padding: 10px;
-                                    color: #4169E1;
-                                    font-size: 1.2em;
-                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
-                                    border-radius: 10px;
-                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 30px;
-                                    color: #333;
-                                    font-size: 1.3em;
-                                    padding: 15px;
-                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-                                    border-radius: 12px;
-                                    box-shadow: 3px 3px 10px #d1d1d1,
-                                                -3px -3px 10px #ffffff;
-                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
-                                }
-                                .result-details {
-                                    display: none;
-                                    margin-top: 15px;
-                                    padding: 15px;
-                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
-                                    border-radius: 10px;
-                                    box-shadow: inset 2px 2px 5px #d1d1d1,
-                                                inset -2px -2px 5px #ffffff;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 12px;
-                                    margin: 8px 0;
-                                    background: linear-gradient(145deg, #ffffff, #f5f5f5);
-                                    border-radius: 8px;
-                                    box-shadow: 2px 2px 5px #d1d1d1,
-                                                -2px -2px 5px #ffffff;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #4169E1;
-                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #444;
-                                }
-                                .save-btn {
-                                    padding: 4px 8px;
-                                    margin-left: 10px;
-                                    background: linear-gradient(145deg, #4CAF50, #45a049);
-                                    color: white;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-size: 14px;
-                                    transition: all 0.3s ease;
-                                }
-                                .save-btn:hover {
-                                    background: linear-gradient(145deg, #45a049, #4CAF50);
-                                    transform: translateY(-1px);
-                                }
-                                .save-btn:active {
-                                    transform: translateY(1px);
-                                }
-                                [contenteditable="true"] {
-                                    padding: 2px 5px;
-                                    border: 1px solid transparent;
-                                    border-radius: 4px;
-                                    transition: all 0.3s ease;
-                                }
-                                [contenteditable="true"]:hover {
-                                    background: #f5f5f5;
-                                    border-color: #ddd;
-                                }
-                                [contenteditable="true"]:focus {
-                                    background: white;
-                                    border-color: #4CAF50;
-                                    outline: none;
-                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-                                }
-                                .highlight {
-                                    background: linear-gradient(145deg, #fff3a0, #ffe066);
-                                    padding: 2px 6px;
-                                    border-radius: 4px;
-                                    font-weight: bold;
-                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="category-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (總共找到 ${results.length} 筆不重複結果)
-                                </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位的結果 (${items.length} 筆)</h3>
-                                        <div class="result-details">
-                                            ${items.map((result, index) => `
-                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                    <div class="result-item">
-                                                        <span class="label">分機號碼：</span>
-                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">使用單位：</span>
-                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號：</span>
-                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">G450 Port：</span>
-                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">分機種類：</span>
-                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">副機數量：</span>
-                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">DID號碼：</span>
-                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">裝機位置：</span>
-                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">拆遷紀錄：</span>
-                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">備註：</span>
-                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
-                } else {
-                    // 如果結果少於或等於2筆，直接顯示詳細資訊
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>分機搜尋結果</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f0f0f0;
-                                }
-                                .results-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                }
-                                .result-card {
-                                    background-color: #fff;
-                                    padding: 20px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                    margin-bottom: 20px;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #333;
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #666;
-                                }
-                                .result-header {
-                                    background-color: #4169E1;
-                                    color: white;
-                                    padding: 10px;
-                                    border-radius: 5px 5px 0 0;
-                                    margin-bottom: 10px;
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    color: #333;
-                                    font-size: 1.2em;
-                                }
-                                .save-btn {
-                                    padding: 4px 8px;
-                                    margin-left: 10px;
-                                    background: linear-gradient(145deg, #4CAF50, #45a049);
-                                    color: white;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-size: 14px;
-                                    transition: all 0.3s ease;
-                                }
-                                .save-btn:hover {
-                                    background: linear-gradient(145deg, #45a049, #4CAF50);
-                                    transform: translateY(-1px);
-                                }
-                                .save-btn:active {
-                                    transform: translateY(1px);
-                                }
-                                [contenteditable="true"] {
-                                    padding: 2px 5px;
-                                    border: 1px solid transparent;
-                                    border-radius: 4px;
-                                    transition: all 0.3s ease;
-                                }
-                                [contenteditable="true"]:hover {
-                                    background: #f5f5f5;
-                                    border-color: #ddd;
-                                }
-                                [contenteditable="true"]:focus {
-                                    background: white;
-                                    border-color: #4CAF50;
-                                    outline: none;
-                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-                                }
-                                .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="results-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                                </div>
-                                ${results.map((result, index) => `
-                                    <div class="result-card">
-                                        <div class="result-header">搜尋結果 #${index + 1}</div>
-                                        <div class="result-item">
-                                            <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號')">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">G450 Port：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">分機種類：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類')">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">DID號碼：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">拆遷紀錄：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">備註：</span>
-                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註')">${highlightText(result['備註'] || '無資料', input)}</span>
-                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
+                // 轉換Set為陣列以便於使用
+                const finalGroupedResults = {};
+                for (const [field, phoneSet] of Object.entries(groupedResults)) {
+                    finalGroupedResults[field] = results.filter(r => 
+                        phoneSet.has(r['分機號碼'] || r['分機'] || r['Tel'] || '')
+                    );
                 }
+
+                const resultWindow = window.open("", "_blank");
+                resultWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="zh-Hant">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>分機搜尋結果分類</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                                background-color: #f5f5f5;
+                                min-height: 100vh;
+                            }
+                            .category-container {
+                                max-width: 800px;
+                                margin: 0 auto;
+                                padding: 20px;
+                            }
+                            .category-card {
+                                background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                padding: 20px;
+                                margin-bottom: 20px;
+                                border-radius: 15px;
+                                box-shadow: 5px 5px 15px #d1d1d1,
+                                            -5px -5px 15px #ffffff;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            }
+                            .category-card:hover {
+                                transform: translateY(-3px);
+                                box-shadow: 8px 8px 20px #d1d1d1,
+                                            -8px -8px 20px #ffffff;
+                            }
+                            .category-card:active {
+                                transform: translateY(1px);
+                                box-shadow: inset 4px 4px 8px #d1d1d1,
+                                            inset -4px -4px 8px #ffffff;
+                            }
+                            .category-card h3 {
+                                margin: 0;
+                                padding: 10px;
+                                color: #4169E1;
+                                font-size: 1.2em;
+                                background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                border-radius: 10px;
+                                text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+                            }
+                            .search-summary {
+                                text-align: center;
+                                margin-bottom: 30px;
+                                color: #333;
+                                font-size: 1.3em;
+                                padding: 15px;
+                                background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                border-radius: 12px;
+                                box-shadow: 3px 3px 10px #d1d1d1,
+                                            -3px -3px 10px #ffffff;
+                                text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+                            }
+                            .result-details {
+                                display: none;
+                                margin-top: 15px;
+                                padding: 15px;
+                                background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                border-radius: 10px;
+                                box-shadow: inset 2px 2px 5px #d1d1d1,
+                                            inset -2px -2px 5px #ffffff;
+                            }
+                            .result-item {
+                                display: flex;
+                                padding: 12px;
+                                margin: 8px 0;
+                                background: linear-gradient(145deg, #ffffff, #f5f5f5);
+                                border-radius: 8px;
+                                box-shadow: 2px 2px 5px #d1d1d1,
+                                            -2px -2px 5px #ffffff;
+                            }
+                            .label {
+                                font-weight: bold;
+                                width: 120px;
+                                color: #4169E1;
+                                text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+                            }
+                            .value {
+                                flex-grow: 1;
+                                color: #444;
+                            }
+                            .save-btn {
+                                padding: 4px 8px;
+                                margin-left: 10px;
+                                background: linear-gradient(145deg, #4CAF50, #45a049);
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                transition: all 0.3s ease;
+                            }
+                            .save-btn:hover {
+                                background: linear-gradient(145deg, #45a049, #4CAF50);
+                                transform: translateY(-1px);
+                            }
+                            .save-btn:active {
+                                transform: translateY(1px);
+                            }
+                            [contenteditable="true"] {
+                                padding: 2px 5px;
+                                border: 1px solid transparent;
+                                border-radius: 4px;
+                                transition: all 0.3s ease;
+                            }
+                            [contenteditable="true"]:hover {
+                                background: #f5f5f5;
+                                border-color: #ddd;
+                            }
+                            [contenteditable="true"]:focus {
+                                background: white;
+                                border-color: #4CAF50;
+                                outline: none;
+                                box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                            }
+                            .highlight {
+                                background: linear-gradient(145deg, #fff3a0, #ffe066);
+                                padding: 2px 6px;
+                                border-radius: 4px;
+                                font-weight: bold;
+                                box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="category-container">
+                            <div class="search-summary">
+                                搜尋條件: "${input}" (總共找到 ${totalUniqueResults} 筆不重複結果)
+                            </div>
+                            ${Object.entries(finalGroupedResults).map(([field, items]) => `
+                                <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                    <h3>符合「${field}」欄位的結果 (${items.length} 筆)</h3>
+                                    <div class="result-details">
+                                        ${items.map((result, index) => `
+                                            <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                <div class="result-item">
+                                                    <span class="label">分機號碼：</span>
+                                                    <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">使用單位：</span>
+                                                    <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">線組編號：</span>
+                                                    <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">G450 Port：</span>
+                                                    <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">分機種類：</span>
+                                                    <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">副機數量：</span>
+                                                    <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">DID號碼：</span>
+                                                    <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">裝機位置：</span>
+                                                    <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">拆遷紀錄：</span>
+                                                    <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">備註：</span>
+                                                    <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            <div class="search-summary" style="margin-top: 20px;">
+                                分類統計：${Object.entries(finalGroupedResults).map(([field, items]) => 
+                                    `<br>符合「${field}」: ${items.length} 筆`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+
+                // 同樣的邏輯應用於調度電話搜尋
+                // ... 調度電話搜尋的代碼也需要類似的修改 ...
             } else {
                 alert('未找到符合的分機資料');
             }
@@ -972,422 +795,242 @@
             });
 
             if (results.length > 0) {
-                // 準備所有結果的 Telegram 訊息內容
-                let telegramMessage = '調度電話搜尋結果:\n';
-                results.forEach((result, index) => {
-                    telegramMessage += `\n--- 結果 ${index + 1} / ${results.length} ---\n`;
-                    telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
-                    telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
-                    telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
-                    telegramMessage += `線組編號(機房): ${result['線組編號(機房)'] || '無資料'}\n`;
-                    telegramMessage += `線組編號(現場): ${result['線組編號(現場)'] || '無資料'}\n`;
-                    telegramMessage += `使用單位: ${result['使用單位'] || '無資料'}\n`;
-                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
-                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
-                    telegramMessage += `連絡電話: ${result['連絡電話'] || '無資料'}\n`;
+                // 根據匹配欄位分類
+                const groupedResults = {};
+                const fields = ['分機號碼', 'C端子位置', 'LENS', '線組編號(機房)', '線組編號(現場)', '使用單位', '裝機位置', '副機數量', '連絡電話'];
+                
+                // 追蹤所有已處理的分機號碼
+                const processedPhoneNumbers = new Set();
+                let totalUniqueResults = 0;
+                
+                results.forEach(result => {
+                    const phoneNumber = result['分機號碼'] || '';
+                    if (!processedPhoneNumbers.has(phoneNumber)) {
+                        processedPhoneNumbers.add(phoneNumber);
+                        totalUniqueResults++;
+                    }
+                    
+                    fields.forEach(field => {
+                        const value = result[field];
+                        if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
+                            if (!groupedResults[field]) {
+                                groupedResults[field] = new Set();
+                            }
+                            groupedResults[field].add(phoneNumber);
+                        }
+                    });
                 });
 
-                // 發送到 Telegram
-                const botToken = '5615970654:AAEiOd-m4fmQkps70wkZlvcwLvguk12FLNk';
-                const chatId = '-677659610';
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: telegramMessage
-                    })
-                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
-
-                // 如果結果超過2筆，顯示分類視窗
-                if (results.length > 2) {
-                    // 根據匹配欄位分類
-                    const groupedResults = {};
-                    const fields = ['分機號碼', 'C端子位置', 'LENS', '線組編號(機房)', '線組編號(現場)', '使用單位', '裝機位置', '副機數量', '連絡電話'];
-                    
-                    // 為每個結果創建一個唯一標識
-                    const processedResults = new Set();
-                    
-                    results.forEach(result => {
-                        let resultId = result['分機號碼'] || ''; // 使用分機號碼作為唯一標識
-                        
-                        fields.forEach(field => {
-                            const value = result[field];
-                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                                if (!groupedResults[field]) {
-                                    groupedResults[field] = [];
-                                }
-                                // 只有當這個結果在這個分類中還沒有出現過時才添加
-                                if (!groupedResults[field].some(r => r['分機號碼'] === result['分機號碼'])) {
-                                    groupedResults[field].push(result);
-                                }
-                            }
-                        });
-                    });
-
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>調度電話搜尋結果分類</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f5f5f5;
-                                    min-height: 100vh;
-                                }
-                                .category-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                    padding: 20px;
-                                }
-                                .category-card {
-                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-                                    padding: 20px;
-                                    margin-bottom: 20px;
-                                    border-radius: 15px;
-                                    box-shadow: 5px 5px 15px #d1d1d1,
-                                                -5px -5px 15px #ffffff;
-                                    cursor: pointer;
-                                    transition: all 0.3s ease;
-                                }
-                                .category-card:hover {
-                                    transform: translateY(-3px);
-                                    box-shadow: 8px 8px 20px #d1d1d1,
-                                                -8px -8px 20px #ffffff;
-                                }
-                                .category-card:active {
-                                    transform: translateY(1px);
-                                    box-shadow: inset 4px 4px 8px #d1d1d1,
-                                                inset -4px -4px 8px #ffffff;
-                                }
-                                .category-card h3 {
-                                    margin: 0;
-                                    padding: 10px;
-                                    color: #4169E1;
-                                    font-size: 1.2em;
-                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
-                                    border-radius: 10px;
-                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 30px;
-                                    color: #333;
-                                    font-size: 1.3em;
-                                    padding: 15px;
-                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-                                    border-radius: 12px;
-                                    box-shadow: 3px 3px 10px #d1d1d1,
-                                                -3px -3px 10px #ffffff;
-                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
-                                }
-                                .result-details {
-                                    display: none;
-                                    margin-top: 15px;
-                                    padding: 15px;
-                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
-                                    border-radius: 10px;
-                                    box-shadow: inset 2px 2px 5px #d1d1d1,
-                                                inset -2px -2px 5px #ffffff;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 12px;
-                                    margin: 8px 0;
-                                    background: linear-gradient(145deg, #ffffff, #f5f5f5);
-                                    border-radius: 8px;
-                                    box-shadow: 2px 2px 5px #d1d1d1,
-                                                -2px -2px 5px #ffffff;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #4169E1;
-                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #444;
-                                }
-                                .save-btn {
-                                    padding: 4px 8px;
-                                    margin-left: 10px;
-                                    background: linear-gradient(145deg, #4CAF50, #45a049);
-                                    color: white;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-size: 14px;
-                                    transition: all 0.3s ease;
-                                }
-                                .save-btn:hover {
-                                    background: linear-gradient(145deg, #45a049, #4CAF50);
-                                    transform: translateY(-1px);
-                                }
-                                .save-btn:active {
-                                    transform: translateY(1px);
-                                }
-                                [contenteditable="true"] {
-                                    padding: 2px 5px;
-                                    border: 1px solid transparent;
-                                    border-radius: 4px;
-                                    transition: all 0.3s ease;
-                                }
-                                [contenteditable="true"]:hover {
-                                    background: #f5f5f5;
-                                    border-color: #ddd;
-                                }
-                                [contenteditable="true"]:focus {
-                                    background: white;
-                                    border-color: #4CAF50;
-                                    outline: none;
-                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-                                }
-                                .highlight {
-                                    background: linear-gradient(145deg, #fff3a0, #ffe066);
-                                    padding: 2px 6px;
-                                    border-radius: 4px;
-                                    font-weight: bold;
-                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="category-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (總共找到 ${results.length} 筆不重複結果)
-                                </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位的結果 (${items.length} 筆)</h3>
-                                        <div class="result-details">
-                                            ${items.map((result, index) => `
-                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                    <div class="result-item">
-                                                        <span class="label">分機號碼：</span>
-                                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">C端子位置：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">LENS：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號(機房)：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號(現場)：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">使用單位：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">裝機位置：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">副機數量：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">連絡電話：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
-                } else {
-                    // 如果結果少於或等於2筆，直接顯示詳細資訊
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>調度電話搜尋結果</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f0f0f0;
-                                }
-                                .results-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                }
-                                .result-card {
-                                    background-color: #fff;
-                                    padding: 20px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                    margin-bottom: 20px;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #333;
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #666;
-                                }
-                                .result-header {
-                                    background-color: #4169E1;
-                                    color: white;
-                                    padding: 10px;
-                                    border-radius: 5px 5px 0 0;
-                                    margin-bottom: 10px;
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    color: #333;
-                                    font-size: 1.2em;
-                                }
-                                .save-btn {
-                                    padding: 4px 8px;
-                                    margin-left: 10px;
-                                    background: linear-gradient(145deg, #4CAF50, #45a049);
-                                    color: white;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-size: 14px;
-                                    transition: all 0.3s ease;
-                                }
-                                .save-btn:hover {
-                                    background: linear-gradient(145deg, #45a049, #4CAF50);
-                                    transform: translateY(-1px);
-                                }
-                                .save-btn:active {
-                                    transform: translateY(1px);
-                                }
-                                [contenteditable="true"] {
-                                    padding: 2px 5px;
-                                    border: 1px solid transparent;
-                                    border-radius: 4px;
-                                    transition: all 0.3s ease;
-                                }
-                                [contenteditable="true"]:hover {
-                                    background: #f5f5f5;
-                                    border-color: #ddd;
-                                }
-                                [contenteditable="true"]:focus {
-                                    background: white;
-                                    border-color: #4CAF50;
-                                    outline: none;
-                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-                                }
-                                .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="results-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (總共找到 ${results.length} 筆不重複結果)
-                                </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位的結果 (${items.length} 筆)</h3>
-                                        <div class="result-details">
-                                            ${items.map((result, index) => `
-                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                    <div class="result-item">
-                                                        <span class="label">分機號碼：</span>
-                                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">C端子位置：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">LENS：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號(機房)：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號(現場)：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">使用單位：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">裝機位置：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">副機數量：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">連絡電話：</span>
-                                                        <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                                        <button onclick="saveTelData(${index})" class="save-btn">保存</button>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
+                // 轉換Set為陣列以便於使用
+                const finalGroupedResults = {};
+                for (const [field, phoneSet] of Object.entries(groupedResults)) {
+                    finalGroupedResults[field] = results.filter(r => 
+                        phoneSet.has(r['分機號碼'] || '')
+                    );
                 }
+
+                const resultWindow = window.open("", "_blank");
+                resultWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="zh-Hant">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>調度電話搜尋結果分類</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                                background-color: #f5f5f5;
+                                min-height: 100vh;
+                            }
+                            .category-container {
+                                max-width: 800px;
+                                margin: 0 auto;
+                                padding: 20px;
+                            }
+                            .category-card {
+                                background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                padding: 20px;
+                                margin-bottom: 20px;
+                                border-radius: 15px;
+                                box-shadow: 5px 5px 15px #d1d1d1,
+                                            -5px -5px 15px #ffffff;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            }
+                            .category-card:hover {
+                                transform: translateY(-3px);
+                                box-shadow: 8px 8px 20px #d1d1d1,
+                                            -8px -8px 20px #ffffff;
+                            }
+                            .category-card:active {
+                                transform: translateY(1px);
+                                box-shadow: inset 4px 4px 8px #d1d1d1,
+                                            inset -4px -4px 8px #ffffff;
+                            }
+                            .category-card h3 {
+                                margin: 0;
+                                padding: 10px;
+                                color: #4169E1;
+                                font-size: 1.2em;
+                                background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                border-radius: 10px;
+                                text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+                            }
+                            .search-summary {
+                                text-align: center;
+                                margin-bottom: 30px;
+                                color: #333;
+                                font-size: 1.3em;
+                                padding: 15px;
+                                background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                border-radius: 12px;
+                                box-shadow: 3px 3px 10px #d1d1d1,
+                                            -3px -3px 10px #ffffff;
+                                text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+                            }
+                            .result-details {
+                                display: none;
+                                margin-top: 15px;
+                                padding: 15px;
+                                background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                border-radius: 10px;
+                                box-shadow: inset 2px 2px 5px #d1d1d1,
+                                            inset -2px -2px 5px #ffffff;
+                            }
+                            .result-item {
+                                display: flex;
+                                padding: 12px;
+                                margin: 8px 0;
+                                background: linear-gradient(145deg, #ffffff, #f5f5f5);
+                                border-radius: 8px;
+                                box-shadow: 2px 2px 5px #d1d1d1,
+                                            -2px -2px 5px #ffffff;
+                            }
+                            .label {
+                                font-weight: bold;
+                                width: 120px;
+                                color: #4169E1;
+                                text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
+                            }
+                            .value {
+                                flex-grow: 1;
+                                color: #444;
+                            }
+                            .save-btn {
+                                padding: 4px 8px;
+                                margin-left: 10px;
+                                background: linear-gradient(145deg, #4CAF50, #45a049);
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                transition: all 0.3s ease;
+                            }
+                            .save-btn:hover {
+                                background: linear-gradient(145deg, #45a049, #4CAF50);
+                                transform: translateY(-1px);
+                            }
+                            .save-btn:active {
+                                transform: translateY(1px);
+                            }
+                            [contenteditable="true"] {
+                                padding: 2px 5px;
+                                border: 1px solid transparent;
+                                border-radius: 4px;
+                                transition: all 0.3s ease;
+                            }
+                            [contenteditable="true"]:hover {
+                                background: #f5f5f5;
+                                border-color: #ddd;
+                            }
+                            [contenteditable="true"]:focus {
+                                background: white;
+                                border-color: #4CAF50;
+                                outline: none;
+                                box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                            }
+                            .highlight {
+                                background: linear-gradient(145deg, #fff3a0, #ffe066);
+                                padding: 2px 6px;
+                                border-radius: 4px;
+                                font-weight: bold;
+                                box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="category-container">
+                            <div class="search-summary">
+                                搜尋條件: "${input}" (總共找到 ${totalUniqueResults} 筆不重複結果)
+                            </div>
+                            ${Object.entries(finalGroupedResults).map(([field, items]) => `
+                                <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                    <h3>符合「${field}」欄位的結果 (${items.length} 筆)</h3>
+                                    <div class="result-details">
+                                        ${items.map((result, index) => `
+                                            <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                <div class="result-item">
+                                                    <span class="label">分機號碼：</span>
+                                                    <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">C端子位置：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">LENS：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">線組編號(機房)：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">線組編號(現場)：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">使用單位：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">裝機位置：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">副機數量：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                                <div class="result-item">
+                                                    <span class="label">連絡電話：</span>
+                                                    <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                    <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            <div class="search-summary" style="margin-top: 20px;">
+                                分類統計：${Object.entries(finalGroupedResults).map(([field, items]) => 
+                                    `<br>符合「${field}」: ${items.length} 筆`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `);
             } else {
                 alert('未找到符合的調度電話資料');
             }
