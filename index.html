@@ -543,31 +543,26 @@
                 const processedPhoneNumbers = new Set();
                 let totalUniqueResults = 0;
                 
+                // 先計算不重複的分機數量
                 results.forEach(result => {
                     const phoneNumber = result['分機號碼'] || result['分機'] || result['Tel'] || '';
                     if (!processedPhoneNumbers.has(phoneNumber)) {
                         processedPhoneNumbers.add(phoneNumber);
                         totalUniqueResults++;
                     }
-                    
-                    fields.forEach(field => {
-                        const value = result[field];
-                        if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                            if (!groupedResults[field]) {
-                                groupedResults[field] = new Set();
-                            }
-                            groupedResults[field].add(phoneNumber);
-                        }
-                    });
                 });
 
-                // 轉換Set為陣列以便於使用
-                const finalGroupedResults = {};
-                for (const [field, phoneSet] of Object.entries(groupedResults)) {
-                    finalGroupedResults[field] = results.filter(r => 
-                        phoneSet.has(r['分機號碼'] || r['分機'] || r['Tel'] || '')
-                    );
-                }
+                // 建立分類結果，但確保每個分機只出現一次
+                const uniqueResults = Array.from(processedPhoneNumbers).map(phoneNumber => 
+                    results.find(r => (r['分機號碼'] || r['分機'] || r['Tel']) === phoneNumber)
+                );
+
+                fields.forEach(field => {
+                    groupedResults[field] = uniqueResults.filter(result => {
+                        const value = result[field];
+                        return value && value.toString().toLowerCase().includes(input.toLowerCase());
+                    });
+                });
 
                 const resultWindow = window.open("", "_blank");
                 resultWindow.document.write(`
@@ -705,63 +700,70 @@
                     <body>
                         <div class="category-container">
                             <div class="search-summary">
-                                搜尋條件: "${input}" (總共找到 ${totalUniqueResults} 筆不重複結果)
+                                搜尋條件: "${input}" (總共找到 ${totalUniqueResults} 筆不重複分機)
                             </div>
-                            ${Object.entries(finalGroupedResults).map(([field, items]) => `
-                                <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                    <h3>符合「${field}」欄位的結果 (${items.length} 筆)</h3>
-                                    <div class="result-details">
-                                        ${items.map((result, index) => `
-                                            <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                <div class="result-item">
-                                                    <span class="label">分機號碼：</span>
-                                                    <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                            ${Object.entries(groupedResults).map(([field, items]) => 
+                                items.length > 0 ? `
+                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                        <h3>在「${field}」欄位中符合的分機 (${items.length} 筆)</h3>
+                                        <div class="result-details">
+                                            ${items.map((result, index) => `
+                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                    <div class="result-item">
+                                                        <span class="label">分機號碼：</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">使用單位：</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號：</span>
+                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">G450 Port：</span>
+                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">分機種類：</span>
+                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">副機數量：</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">DID號碼：</span>
+                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">裝機位置：</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">拆遷紀錄：</span>
+                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">備註：</span>
+                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                    </div>
                                                 </div>
-                                                <div class="result-item">
-                                                    <span class="label">使用單位：</span>
-                                                    <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">線組編號：</span>
-                                                    <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">G450 Port：</span>
-                                                    <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">分機種類：</span>
-                                                    <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">副機數量：</span>
-                                                    <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">DID號碼：</span>
-                                                    <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">裝機位置：</span>
-                                                    <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">拆遷紀錄：</span>
-                                                    <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                                </div>
-                                                <div class="result-item">
-                                                    <span class="label">備註：</span>
-                                                    <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                                                </div>
-                                            </div>
-                                        `).join('')}
+                                            `).join('')}
+                                        </div>
                                     </div>
-                                </div>
-                            `).join('')}
+                                ` : ''
+                            ).join('')}
                             <div class="search-summary" style="margin-top: 20px;">
-                                分類統計：${Object.entries(finalGroupedResults).map(([field, items]) => 
-                                    `<br>符合「${field}」: ${items.length} 筆`
-                                ).join('')}
+                                分類統計：
+                                ${Object.entries(groupedResults)
+                                    .filter(([field, items]) => items.length > 0)
+                                    .map(([field, items]) => 
+                                        `<br>在「${field}」欄位中找到 ${items.length} 個分機`
+                                    ).join('')}
+                                <br><br>
+                                <strong>註：同一分機可能出現在多個欄位中，但在總數中只計算一次。</strong>
                             </div>
                         </div>
                     </body>
@@ -975,7 +977,7 @@
                                             <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
                                                 <div class="result-item">
                                                     <span class="label">分機號碼：</span>
-                                                    <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                                    <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
                                                 </div>
                                                 <div class="result-item">
                                                     <span class="label">C端子位置：</span>
