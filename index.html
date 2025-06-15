@@ -538,7 +538,7 @@
                 // 準備所有結果的 Telegram 訊息內容
                 let telegramMessage = '分機搜尋結果:\n';
                 results.forEach((result, index) => {
-                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                    telegramMessage += `\n--- 結果 ${index + 1} / ${results.length} ---\n`;
                     telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
                     telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
                     telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
@@ -969,7 +969,7 @@
                 // 準備所有結果的 Telegram 訊息內容
                 let telegramMessage = '調度電話搜尋結果:\n';
                 results.forEach((result, index) => {
-                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                    telegramMessage += `\n--- 結果 ${index + 1} / ${results.length} ---\n`;
                     telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
                     telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
                     telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
@@ -1151,11 +1151,11 @@
                         <body>
                             <div class="category-container">
                                 <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                    搜尋條件: "${input}" (總共找到 ${results.length} 筆結果)
                                 </div>
                                 ${Object.entries(groupedResults).map(([field, items]) => `
                                     <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
+                                        <h3>符合「${field}」欄位的結果 (${items.length} / ${results.length} 筆)</h3>
                                         <div class="result-details">
                                             ${items.map((result, index) => `
                                                 <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
@@ -1313,11 +1313,11 @@
                         <body>
                             <div class="results-container">
                                 <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                    搜尋條件: "${input}" (總共找到 ${results.length} 筆結果)
                                 </div>
                                 ${results.map((result, index) => `
                                     <div class="result-card">
-                                        <div class="result-header">搜尋結果 #${index + 1}</div>
+                                        <div class="result-header">搜尋結果 #${index + 1} / ${results.length}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
                                             <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
