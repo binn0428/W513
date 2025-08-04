@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>資料查詢</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
     <style>
         body {
             display: flex;
@@ -52,26 +54,227 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 1px solid #000;
+            border: none;
             margin: 5px;
             font-size: 18px;
             cursor: pointer;
-            box-shadow: 0 6px #999;
+            background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
+            border-radius: 10px;
+            box-shadow: 5px 5px 10px #d1d1d1,
+                        -5px -5px 10px #ffffff;
             transition: all 0.3s ease;
             position: relative;
             top: 0;
-            background: linear-gradient(to bottom, #90EE90, #32CD32);
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.5);
         }
         .option:hover {
-            background: linear-gradient(to bottom, #90EE90, #1E90FF);
+            background: linear-gradient(145deg, #e6e6e6, #f0f0f0);
+            color: #4169E1;
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 12px #d1d1d1,
+                        -6px -6px 12px #ffffff;
         }
         .option:active {
-            top: 5px;
-            box-shadow: 0 1px #666;
-            background: linear-gradient(to bottom, #32CD32, #90EE90);
+            transform: translateY(2px);
+            background: linear-gradient(145deg, #e6e6e6, #f0f0f0);
+            box-shadow: inset 4px 4px 8px #d1d1d1,
+                        inset -4px -4px 8px #ffffff;
+        }
+        .category-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            box-shadow: 5px 5px 10px #d1d1d1,
+                        -5px -5px 10px #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 12px #d1d1d1,
+                        -6px -6px 12px #ffffff;
+        }
+        .category-card:active {
+            transform: translateY(1px);
+            box-shadow: inset 4px 4px 8px #d1d1d1,
+                        inset -4px -4px 8px #ffffff;
+        }
+        .result-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 5px 5px 10px #d1d1d1,
+                        -5px -5px 10px #ffffff;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 12px #d1d1d1,
+                        -6px -6px 12px #ffffff;
+        }
+        .result-header {
+            background: linear-gradient(145deg, #4169E1, #1E90FF);
+            color: white;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            margin: -20px -20px 15px -20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
     </style>
     <script>
+        // Google Sheets API 設定
+        const DISPATCH_SPREADSHEET_ID = '1HrBAWPJ3EzUzIe1eBllfWYHVZPSDqCIUs-xWB9p8pR0';
+        const TEL_SPREADSHEET_ID = '179mJV2okUaSvsB8NlZQ-NmZyiE5gLnhbaG-zLHySxOo';
+        const API_KEY = 'AIzaSyCcwPCwHCm7N_nKqhECef_YxucIqwLk3nU';
+        const RANGE = 'Sheet1!A:K';
+
+        // 初始化 Google Sheets API
+        function initGoogleSheetsAPI() {
+            gapi.load('client', async () => {
+                try {
+                    await gapi.client.init({
+                        apiKey: API_KEY,
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                    });
+                    console.log('Google Sheets API 初始化成功');
+                    await Promise.all([loadTelData(), loadDispatchData()]);
+                    
+                    // 啟用所有按鈕
+                    document.querySelectorAll('button').forEach(button => {
+                        button.disabled = false;
+                    });
+                    
+                    // 顯示完成訊息並設定延遲消失
+                    showLoadingStatus('所有資料載入完成！');
+                    setTimeout(removeLoadingStatus, 500);
+                    
+                } catch (error) {
+                    console.error('Google Sheets API 初始化失敗:', error);
+                    showLoadingStatus('Google Sheets API 初始化失敗: ' + error.message);
+                    setTimeout(removeLoadingStatus, 1000);
+                }
+            });
+        }
+
+        // 載入電話資料
+        async function loadTelData() {
+            try {
+                showLoadingStatus('正在載入電話資料...');
+                console.log('開始載入電話資料...');
+                
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: TEL_SPREADSHEET_ID,
+                    range: RANGE
+                });
+
+                if (!response.result || !response.result.values) {
+                    throw new Error('電話資料 API 回應格式不正確');
+                }
+
+                const values = response.result.values;
+                if (values.length === 0) {
+                    throw new Error('電話資料試算表中沒有資料');
+                }
+
+                const headers = values[0];
+                telData = values.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
+                    });
+                    return obj;
+                });
+
+                console.log('電話資料載入完成');
+
+            } catch (error) {
+                console.error('電話資料載入錯誤:', error);
+                throw error; // 向上傳遞錯誤
+            }
+        }
+
+        // 載入調度資料
+        async function loadDispatchData() {
+            try {
+                showLoadingStatus('正在載入調度資料...');
+                console.log('開始載入調度資料...');
+                
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: DISPATCH_SPREADSHEET_ID,
+                    range: RANGE
+                });
+
+                if (!response.result || !response.result.values) {
+                    throw new Error('調度資料 API 回應格式不正確');
+                }
+
+                const values = response.result.values;
+                if (values.length === 0) {
+                    throw new Error('調度資料試算表中沒有資料');
+                }
+
+                const headers = values[0];
+                dispatchData = values.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
+                    });
+                    return obj;
+                });
+
+                console.log('調度資料載入完成');
+
+            } catch (error) {
+                console.error('調度資料載入錯誤:', error);
+                throw error; // 向上傳遞錯誤
+            }
+        }
+
+        // 保存資料到 Google Sheets
+        async function saveData(index) {
+            try {
+                showLoadingStatus('正在保存資料到 Google Sheets...');
+
+                const values = telData.map(row => {
+                    return Object.values(row);
+                });
+
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: TEL_SPREADSHEET_ID,
+                    range: RANGE,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: values
+                    }
+                });
+
+                showLoadingStatus('資料已成功保存到 Google Sheets！');
+                setTimeout(removeLoadingStatus, 1000);
+
+            } catch (error) {
+                console.error('保存資料錯誤:', error);
+                showLoadingStatus('保存資料失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
+            }
+        }
+
+        // 頁面載入時初始化 Google Sheets API
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('頁面載入完成，開始初始化...');
+            initGoogleSheetsAPI();
+            
+            // 初始時禁用搜尋按鈕
+            document.querySelectorAll('button').forEach(button => {
+                button.disabled = true;
+            });
+        });
+
         function openNewPage(group, buttonNames, imagePaths) {
             const newWindow = window.open("", "_blank");
             newWindow.document.write(`
@@ -224,6 +427,55 @@
         let telData = null;
         let dispatchData = null;
 
+        // 更新調度資料的函數
+        function updateDispatchData(element, index, field) {
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (dispatchData && dispatchData[index]) {
+                dispatchData[index][field] = newValue;
+            }
+        }
+
+        // 保存調度資料到Excel的函數
+        async function saveDispatchData(index) {
+            try {
+                showLoadingStatus('正在保存資料...');
+                
+                // 將更新後的資料轉換為工作表
+                const ws = XLSX.utils.json_to_sheet(dispatchData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                // 將工作表轉換為二進制數據
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                
+                // 創建Blob對象
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // 創建FormData對象
+                const formData = new FormData();
+                formData.append('file', blob, 'tel/調度資料.xlsx');
+                
+                // 直接將文件保存到本地
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = '調度資料.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                
+                showLoadingStatus('資料已更新並下載！');
+                setTimeout(removeLoadingStatus, 1000);
+                
+            } catch (error) {
+                console.error('資料更新錯誤:', error);
+                showLoadingStatus('資料更新失敗，請重試');
+                setTimeout(removeLoadingStatus, 1000);
+            }
+        }
+
         // 添加載入狀態指示器
         function showLoadingStatus(message) {
             removeLoadingStatus();
@@ -251,76 +503,6 @@
                 statusDiv.parentNode.removeChild(statusDiv);
             }
         }
-
-        // 資料載入函數
-        async function loadData() {
-            try {
-                showLoadingStatus('正在載入資料...');
-                
-                // 同時載入兩個檔案
-                const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('./tel/電話資料.xlsx'),
-                    fetch('./tel/調度資料.xlsx')
-                ]);
-
-                // 檢查回應狀態
-                if (!telResponse.ok) throw new Error('電話資料載入失敗');
-                if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
-
-                // 轉換為 ArrayBuffer
-                const [telBuffer, dispatchBuffer] = await Promise.all([
-                    telResponse.arrayBuffer(),
-                    dispatchResponse.arrayBuffer()
-                ]);
-
-                // 處理電話資料
-                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
-                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
-
-                // 處理調度資料
-                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
-                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
-
-                // 將調度資料的數字轉換為字串格式
-                dispatchData = dispatchData.map(item => {
-                    if (item['分機號碼'] !== undefined) {
-                        item['分機號碼'] = item['分機號碼'].toString();
-                    }
-                    return item;
-                });
-
-                // 啟用搜尋按鈕
-                document.querySelectorAll('button').forEach(button => {
-                    button.disabled = false;
-                });
-
-                // 顯示成功訊息
-                showLoadingStatus('資料載入完成！');
-                
-                // 縮短顯示時間到 500 毫秒
-                await new Promise(resolve => setTimeout(resolve, 200));
-                removeLoadingStatus();
-
-            } catch (error) {
-                console.error('資料載入錯誤:', error);
-                showLoadingStatus('資料載入失敗，請重新整理頁面');
-                
-                // 縮短錯誤訊息顯示時間到 1000 毫秒
-                await new Promise(resolve => setTimeout(resolve, 500));
-                removeLoadingStatus();
-            }
-        }
-
-        // 頁面載入時執行
-        window.addEventListener('DOMContentLoaded', () => {
-            // 初始時禁用搜尋按鈕
-            document.querySelectorAll('button').forEach(button => {
-                button.disabled = true;
-            });
-            
-            // 載入資料
-            loadData();
-        });
 
         function highlightText(text, searchTerm) {
             if (!text || !searchTerm) return text;
@@ -416,56 +598,123 @@
                                     font-family: Arial, sans-serif;
                                     margin: 0;
                                     padding: 20px;
-                                    background-color: #f0f0f0;
+                                    background-color: #f5f5f5;
+                                    min-height: 100vh;
                                 }
                                 .category-container {
                                     max-width: 800px;
                                     margin: 0 auto;
+                                    padding: 20px;
                                 }
                                 .category-card {
-                                    background-color: #fff;
-                                    padding: 15px;
-                                    margin-bottom: 15px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                    padding: 20px;
+                                    margin-bottom: 20px;
+                                    border-radius: 15px;
+                                    box-shadow: 5px 5px 15px #d1d1d1,
+                                                -5px -5px 15px #ffffff;
                                     cursor: pointer;
-                                    transition: background-color 0.3s;
+                                    transition: all 0.3s ease;
                                 }
                                 .category-card:hover {
-                                    background-color: #f5f5f5;
+                                    transform: translateY(-3px);
+                                    box-shadow: 8px 8px 20px #d1d1d1,
+                                                -8px -8px 20px #ffffff;
+                                }
+                                .category-card:active {
+                                    transform: translateY(1px);
+                                    box-shadow: inset 4px 4px 8px #d1d1d1,
+                                                inset -4px -4px 8px #ffffff;
+                                }
+                                .category-card h3 {
+                                    margin: 0;
+                                    padding: 10px;
+                                    color: #4169E1;
+                                    font-size: 1.2em;
+                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                    border-radius: 10px;
+                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
                                 }
                                 .search-summary {
                                     text-align: center;
-                                    margin-bottom: 20px;
+                                    margin-bottom: 30px;
                                     color: #333;
-                                    font-size: 1.2em;
+                                    font-size: 1.3em;
+                                    padding: 15px;
+                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                    border-radius: 12px;
+                                    box-shadow: 3px 3px 10px #d1d1d1,
+                                                -3px -3px 10px #ffffff;
+                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
                                 }
                                 .result-details {
                                     display: none;
-                                    margin-top: 10px;
-                                    padding: 10px;
-                                    background-color: #f9f9f9;
-                                    border-radius: 5px;
+                                    margin-top: 15px;
+                                    padding: 15px;
+                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                    border-radius: 10px;
+                                    box-shadow: inset 2px 2px 5px #d1d1d1,
+                                                inset -2px -2px 5px #ffffff;
                                 }
                                 .result-item {
                                     display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
+                                    padding: 12px;
+                                    margin: 8px 0;
+                                    background: linear-gradient(145deg, #ffffff, #f5f5f5);
+                                    border-radius: 8px;
+                                    box-shadow: 2px 2px 5px #d1d1d1,
+                                                -2px -2px 5px #ffffff;
                                 }
                                 .label {
                                     font-weight: bold;
                                     width: 120px;
-                                    color: #333;
+                                    color: #4169E1;
+                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
                                 }
                                 .value {
                                     flex-grow: 1;
-                                    color: #666;
+                                    color: #444;
+                                }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
                                 }
                                 .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
+                                    background: linear-gradient(145deg, #fff3a0, #ffe066);
+                                    padding: 2px 6px;
+                                    border-radius: 4px;
                                     font-weight: bold;
+                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
                                 }
                             </style>
                         </head>
@@ -585,6 +834,40 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                                }
                                 .highlight {
                                     background-color: #ffeb3b;
                                     padding: 2px 4px;
@@ -607,39 +890,48 @@
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號：</span>
-                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號')">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">G450 Port：</span>
-                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'G450 Port')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">分機種類：</span>
-                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '分機種類')">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">DID號碼：</span>
-                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '對應DID號碼')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">拆遷紀錄：</span>
-                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '拆遷記錄')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">備註：</span>
-                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '備註')">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -736,56 +1028,123 @@
                                     font-family: Arial, sans-serif;
                                     margin: 0;
                                     padding: 20px;
-                                    background-color: #f0f0f0;
+                                    background-color: #f5f5f5;
+                                    min-height: 100vh;
                                 }
                                 .category-container {
                                     max-width: 800px;
                                     margin: 0 auto;
+                                    padding: 20px;
                                 }
                                 .category-card {
-                                    background-color: #fff;
-                                    padding: 15px;
-                                    margin-bottom: 15px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                    padding: 20px;
+                                    margin-bottom: 20px;
+                                    border-radius: 15px;
+                                    box-shadow: 5px 5px 15px #d1d1d1,
+                                                -5px -5px 15px #ffffff;
                                     cursor: pointer;
-                                    transition: background-color 0.3s;
+                                    transition: all 0.3s ease;
                                 }
                                 .category-card:hover {
-                                    background-color: #f5f5f5;
+                                    transform: translateY(-3px);
+                                    box-shadow: 8px 8px 20px #d1d1d1,
+                                                -8px -8px 20px #ffffff;
+                                }
+                                .category-card:active {
+                                    transform: translateY(1px);
+                                    box-shadow: inset 4px 4px 8px #d1d1d1,
+                                                inset -4px -4px 8px #ffffff;
+                                }
+                                .category-card h3 {
+                                    margin: 0;
+                                    padding: 10px;
+                                    color: #4169E1;
+                                    font-size: 1.2em;
+                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                    border-radius: 10px;
+                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
                                 }
                                 .search-summary {
                                     text-align: center;
-                                    margin-bottom: 20px;
+                                    margin-bottom: 30px;
                                     color: #333;
-                                    font-size: 1.2em;
+                                    font-size: 1.3em;
+                                    padding: 15px;
+                                    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+                                    border-radius: 12px;
+                                    box-shadow: 3px 3px 10px #d1d1d1,
+                                                -3px -3px 10px #ffffff;
+                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
                                 }
                                 .result-details {
                                     display: none;
-                                    margin-top: 10px;
-                                    padding: 10px;
-                                    background-color: #f9f9f9;
-                                    border-radius: 5px;
+                                    margin-top: 15px;
+                                    padding: 15px;
+                                    background: linear-gradient(145deg, #f8f8f8, #eeeeee);
+                                    border-radius: 10px;
+                                    box-shadow: inset 2px 2px 5px #d1d1d1,
+                                                inset -2px -2px 5px #ffffff;
                                 }
                                 .result-item {
                                     display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
+                                    padding: 12px;
+                                    margin: 8px 0;
+                                    background: linear-gradient(145deg, #ffffff, #f5f5f5);
+                                    border-radius: 8px;
+                                    box-shadow: 2px 2px 5px #d1d1d1,
+                                                -2px -2px 5px #ffffff;
                                 }
                                 .label {
                                     font-weight: bold;
                                     width: 120px;
-                                    color: #333;
+                                    color: #4169E1;
+                                    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.8);
                                 }
                                 .value {
                                     flex-grow: 1;
-                                    color: #666;
+                                    color: #444;
+                                }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
                                 }
                                 .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
+                                    background: linear-gradient(145deg, #fff3a0, #ffe066);
+                                    padding: 2px 6px;
+                                    border-radius: 4px;
                                     font-weight: bold;
+                                    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
                                 }
                             </style>
                         </head>
@@ -806,35 +1165,43 @@
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">C端子位置：</span>
-                                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">LENS：</span>
-                                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(機房)：</span>
-                                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(現場)：</span>
-                                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">使用單位：</span>
-                                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">裝機位置：</span>
-                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">副機數量：</span>
-                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">連絡電話：</span>
-                                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                        <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                        <button onclick="saveDispatchData(${index})" class="save-btn">保存</button>
                                                     </div>
                                                 </div>
                                             `).join('')}
@@ -901,6 +1268,40 @@
                                     color: #333;
                                     font-size: 1.2em;
                                 }
+                                .save-btn {
+                                    padding: 4px 8px;
+                                    margin-left: 10px;
+                                    background: linear-gradient(145deg, #4CAF50, #45a049);
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    transition: all 0.3s ease;
+                                }
+                                .save-btn:hover {
+                                    background: linear-gradient(145deg, #45a049, #4CAF50);
+                                    transform: translateY(-1px);
+                                }
+                                .save-btn:active {
+                                    transform: translateY(1px);
+                                }
+                                [contenteditable="true"] {
+                                    padding: 2px 5px;
+                                    border: 1px solid transparent;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease;
+                                }
+                                [contenteditable="true"]:hover {
+                                    background: #f5f5f5;
+                                    border-color: #ddd;
+                                }
+                                [contenteditable="true"]:focus {
+                                    background: white;
+                                    border-color: #4CAF50;
+                                    outline: none;
+                                    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+                                }
                                 .highlight {
                                     background-color: #ffeb3b;
                                     padding: 2px 4px;
@@ -923,35 +1324,43 @@
                                         </div>
                                         <div class="result-item">
                                             <span class="label">C端子位置：</span>
-                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">LENS：</span>
-                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(機房)：</span>
-                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(現場)：</span>
-                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">連絡電話：</span>
-                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${index}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <button onclick="saveTelData(${index})" class="save-btn">保存</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -975,6 +1384,28 @@
                 e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
             }
         });
+
+        function updateTelData(element, index, field) {
+            const newValue = element.textContent;
+            telData[index][field] = newValue;
+        }
+
+        function saveTelData(index) {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(telData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '電話資料.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('資料已成功保存！');
+        }
     </script>
 </head>
 <body>
@@ -1023,7 +1454,7 @@
              'group_3/W3對4121天車CO系統位置圖.JPG', 'group_3/W3對4151天車RO系統位置圖.JPG', 'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系統圖.JPG',
              'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG',
              'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 'group_3/Y52電氣鍍鋅場(EGL)PA位置圖.JPG',
-             'group_3/Y52電氣鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y513PLCM高聲電話位置圖.JPG', 'group_3/Y513PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/g4.jpg','group_3/Y515_系統圖.jpg','group_3/Y515_位置說明_第1頁.jpg',
+             'group_3/Y52電氣鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/g4.jpg',
             ];
             const filteredImages = images.filter(image => image.toLowerCase().includes(input));
             if (filteredImages.length > 0) {
