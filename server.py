@@ -103,5 +103,5 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     PORT = 8000
     with socketserver.TCPServer(("", PORT), CustomHTTPRequestHandler) as httpd:
-        print(f"Server running at http://localhost:{PORT}/")
+        print(f"Server running at https://binn0428.github.io/W513/:{PORT}/")
         httpd.serve_forever()
