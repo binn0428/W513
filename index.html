@@ -224,6 +224,71 @@
         let telData = null;
         let dispatchData = null;
 
+        // 更新電話資料的函數
+        function updateTelData(element, index, field) {
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (telData && telData[index]) {
+                telData[index][field] = newValue;
+            }
+        }
+
+        // 保存電話資料到Excel的函數
+        function saveTelData(index) {
+            try {
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(telData);
+                XLSX.utils.book_append_sheet(workbook, worksheet, "電話資料");
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '電話資料.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('資料已成功保存！');
+            } catch (error) {
+                console.error('保存錯誤:', error);
+                alert('保存失敗，請重試');
+            }
+        }
+
+        // 更新調度資料的函數
+        function updateDispatchData(element, index, field) {
+            const newValue = element.textContent.trim();
+            if (newValue === '無資料') return;
+            
+            if (dispatchData && dispatchData[index]) {
+                dispatchData[index][field] = newValue;
+            }
+        }
+
+        // 保存調度資料到Excel的函數
+        function saveDispatchData(index) {
+            try {
+                const ws = XLSX.utils.json_to_sheet(dispatchData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "調度資料");
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = '調度資料.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                alert('資料已成功保存！');
+            } catch (error) {
+                console.error('保存錯誤:', error);
+                alert('保存失敗，請重試');
+            }
+        }
+
         // 添加載入狀態指示器
         function showLoadingStatus(message) {
             removeLoadingStatus();
@@ -603,43 +668,46 @@
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '分機號碼')">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '使用單位')">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號：</span>
-                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '線組編號')">${highlightText(result['線組編號'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">G450 Port：</span>
-                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, 'G450 Port')">${highlightText(result['G450 Port'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">分機種類：</span>
-                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '分機種類')">${highlightText(result['分機種類'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">DID號碼：</span>
-                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '對應DID號碼')">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">拆遷紀錄：</span>
-                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '拆遷記錄')">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">備註：</span>
-                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateTelData(this, ${telData.indexOf(result)}, '備註')">${highlightText(result['備註'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item" style="justify-content: center; border: none; padding-top: 15px;">
+                                            <button onclick="saveTelData(${telData.indexOf(result)})" style="background-color: #4169E1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">保存到Excel</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -919,39 +987,42 @@
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '分機號碼')">${highlightText(result['分機號碼'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">C端子位置：</span>
-                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, 'C端子位置')">${highlightText(result['C端子位置'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">LENS：</span>
-                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, 'LENS')">${highlightText(result['LENS'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(機房)：</span>
-                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '線組編號(機房)')">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(現場)：</span>
-                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '線組編號(現場)')">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '使用單位')">${highlightText(result['使用單位'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '裝機位置')">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '副機數量')">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">連絡電話：</span>
-                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <span class="value" contenteditable="true" onblur="updateDispatchData(this, ${dispatchData.indexOf(result)}, '連絡電話')">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item" style="justify-content: center; border: none; padding-top: 15px;">
+                                            <button onclick="saveDispatchData(${dispatchData.indexOf(result)})" style="background-color: #4169E1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">保存到Excel</button>
                                         </div>
                                     </div>
                                 `).join('')}
