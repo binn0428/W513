@@ -231,6 +231,31 @@
             
             if (telData && telData[index]) {
                 telData[index][field] = newValue;
+                
+                // 發送POST請求更新伺服器上的Excel檔案
+                const updateData = {
+                    index: index,
+                    data: { [field]: newValue }
+                };
+                
+                fetch('/update-tel-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('電話資料已成功更新到伺服器');
+                    } else {
+                        console.error('更新失敗:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('更新錯誤:', error);
+                });
             }
         }
 
@@ -264,6 +289,31 @@
             
             if (dispatchData && dispatchData[index]) {
                 dispatchData[index][field] = newValue;
+                
+                // 發送POST請求更新伺服器上的Excel檔案
+                const updateData = {
+                    index: index,
+                    data: { [field]: newValue }
+                };
+                
+                fetch('/update-dispatch-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('調度資料已成功更新到伺服器');
+                    } else {
+                        console.error('更新失敗:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('更新錯誤:', error);
+                });
             }
         }
 
