@@ -467,98 +467,12 @@
                                     border-radius: 2px;
                                     font-weight: bold;
                                 }
-                                .edit-input {
-                                    width: 100%;
-                                    padding: 5px;
-                                    border: 1px solid #ddd;
-                                    border-radius: 3px;
-                                    font-size: 14px;
-                                }
-                                .edit-controls {
-                                    text-align: center;
-                                    margin-top: 20px;
-                                    padding: 20px;
-                                    background-color: #f9f9f9;
-                                    border-radius: 5px;
-                                }
-                                .edit-btn {
-                                    padding: 10px 20px;
-                                    margin: 0 5px;
-                                    border: none;
-                                    border-radius: 5px;
-                                    cursor: pointer;
-                                    font-size: 14px;
-                                    background-color: #6c757d;
-                                    color: white;
-                                }
-                                .edit-btn.primary {
-                                    background-color: #007bff;
-                                }
-                                .edit-btn.success {
-                                    background-color: #28a745;
-                                }
-                                .edit-btn.secondary {
-                                    background-color: #6c757d;
-                                }
-                                .edit-btn:hover {
-                                    opacity: 0.8;
-                                }
-                                .edit-input {
-                                    width: 100%;
-                                    padding: 5px;
-                                    border: 1px solid #ddd;
-                                    border-radius: 3px;
-                                    font-size: 14px;
-                                }
-                                .edit-controls {
-                                    text-align: center;
-                                    margin: 20px 0;
-                                    padding: 15px;
-                                    background-color: #f8f9fa;
-                                    border-radius: 5px;
-                                }
-                                .edit-btn {
-                                    padding: 8px 16px;
-                                    margin: 0 5px;
-                                    border: none;
-                                    border-radius: 4px;
-                                    cursor: pointer;
-                                    font-size: 14px;
-                                    transition: background-color 0.3s;
-                                }
-                                .edit-btn.primary {
-                                    background-color: #007bff;
-                                    color: white;
-                                }
-                                .edit-btn.primary:hover {
-                                    background-color: #0056b3;
-                                }
-                                .edit-btn.success {
-                                    background-color: #28a745;
-                                    color: white;
-                                }
-                                .edit-btn.success:hover {
-                                    background-color: #1e7e34;
-                                }
-                                .edit-btn.secondary {
-                                    background-color: #6c757d;
-                                    color: white;
-                                }
-                                .edit-btn.secondary:hover {
-                                    background-color: #545b62;
-                                }
                             </style>
                         </head>
                         <body>
                             <div class="category-container">
                                 <div class="search-summary">
                                     搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                                </div>
-                                <div class="edit-controls">
-                                    <button class="edit-btn primary" onclick="toggleEditMode()">編輯模式</button>
-                                    <button class="edit-btn success" onclick="saveChanges()" style="display:none;" id="saveBtn">保存變更</button>
-                                    <button class="edit-btn secondary" onclick="cancelEdit()" style="display:none;" id="cancelBtn">取消編輯</button>
-                                    <button class="edit-btn success" onclick="downloadExcel()" style="margin-left: 20px;">下載 Excel</button>
                                 </div>
                                 ${Object.entries(groupedResults).map(([field, items]) => `
                                     <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
@@ -567,167 +481,51 @@
                                             ${items.map((result, index) => `
                                                 <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
                                                     <div class="result-item">
-                                    <span class="label">分機號碼：</span>
-                                    <span class="value view-mode">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['分機號碼'] || result['分機'] || result['Tel'] || ''}" data-field="分機號碼" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">使用單位：</span>
-                                    <span class="value view-mode">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['使用單位'] || result['單位'] || result['部門'] || ''}" data-field="使用單位" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">線組編號：</span>
-                                    <span class="value view-mode">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['線組編號'] || ''}" data-field="線組編號" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">G450 Port：</span>
-                                    <span class="value view-mode">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['G450 Port'] || ''}" data-field="G450 Port" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">分機種類：</span>
-                                    <span class="value view-mode">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['分機種類'] || ''}" data-field="分機種類" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">副機數量：</span>
-                                    <span class="value view-mode">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['副機數量'] || ''}" data-field="副機數量" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">DID號碼：</span>
-                                    <span class="value view-mode">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['對應DID號碼'] || ''}" data-field="對應DID號碼" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">裝機位置：</span>
-                                    <span class="value view-mode">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['裝機位置'] || ''}" data-field="裝機位置" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">拆遷紀錄：</span>
-                                    <span class="value view-mode">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['拆遷記錄'] || ''}" data-field="拆遷記錄" data-index="${index}">
-                                </div>
-                                <div class="result-item">
-                                    <span class="label">備註：</span>
-                                    <span class="value view-mode">${highlightText(result['備註'] || '無資料', input)}</span>
-                                    <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['備註'] || ''}" data-field="備註" data-index="${index}">
-                                </div>
+                                                        <span class="label">分機號碼：</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">使用單位：</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號：</span>
+                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">G450 Port：</span>
+                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">分機種類：</span>
+                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">副機數量：</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">DID號碼：</span>
+                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">裝機位置：</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">拆遷紀錄：</span>
+                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">備註：</span>
+                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                    </div>
                                                 </div>
                                             `).join('')}
                                         </div>
                                     </div>
                                 `).join('')}
-                                <div class="edit-controls">
-                                    <button class="edit-btn" onclick="toggleEditMode()">編輯模式</button>
-                                    <button class="edit-btn primary" onclick="saveChanges()" style="display:none;">保存變更</button>
-                                    <button class="edit-btn secondary" onclick="cancelEdit()" style="display:none;">取消編輯</button>
-                                    <button class="edit-btn success" onclick="downloadExcel()">下載 Excel</button>
-                                </div>
                             </div>
-                            <script>
-                                let isEditMode = false;
-                                let originalData = ${JSON.stringify(results)};
-                                let currentData = JSON.parse(JSON.stringify(originalData));
-                                
-                                function toggleEditMode() {
-                                    isEditMode = !isEditMode;
-                                    const viewElements = document.querySelectorAll('.view-mode');
-                                    const editElements = document.querySelectorAll('.edit-mode');
-                                    const editBtn = document.querySelector('.edit-btn:not(.primary):not(.secondary):not(.success)');
-                                    const saveBtn = document.querySelector('.edit-btn.primary');
-                                    const cancelBtn = document.querySelector('.edit-btn.secondary');
-                                    
-                                    if (isEditMode) {
-                                        viewElements.forEach(el => el.style.display = 'none');
-                                        editElements.forEach(el => el.style.display = 'block');
-                                        if (editBtn) editBtn.style.display = 'none';
-                                        if (saveBtn) saveBtn.style.display = 'inline-block';
-                                        if (cancelBtn) cancelBtn.style.display = 'inline-block';
-                                    } else {
-                                        viewElements.forEach(el => el.style.display = 'block');
-                                        editElements.forEach(el => el.style.display = 'none');
-                                        if (editBtn) editBtn.style.display = 'inline-block';
-                                        if (saveBtn) saveBtn.style.display = 'none';
-                                        if (cancelBtn) cancelBtn.style.display = 'none';
-                                    }
-                                }
-                                
-                                function saveChanges() {
-                                    const editInputs = document.querySelectorAll('.edit-input');
-                                    editInputs.forEach(input => {
-                                        const index = parseInt(input.dataset.index);
-                                        const field = input.dataset.field;
-                                        const value = input.value;
-                                        
-                                        if (currentData[index]) {
-                                            currentData[index][field] = value;
-                                        }
-                                    });
-                                    
-                                    // 更新顯示的值
-                                    editInputs.forEach(input => {
-                                        const index = parseInt(input.dataset.index);
-                                        const field = input.dataset.field;
-                                        const value = input.value;
-                                        const viewElement = input.parentElement.querySelector('.view-mode');
-                                        if (viewElement) {
-                                            viewElement.innerHTML = value || '無資料';
-                                        }
-                                    });
-                                    
-                                    toggleEditMode();
-                                    alert('變更已保存！');
-                                }
-                                
-                                function cancelEdit() {
-                                    // 重置所有輸入框的值
-                                    const editInputs = document.querySelectorAll('.edit-input');
-                                    editInputs.forEach(input => {
-                                        const index = parseInt(input.dataset.index);
-                                        const field = input.dataset.field;
-                                        const originalValue = originalData[index] ? originalData[index][field] || '' : '';
-                                        input.value = originalValue;
-                                    });
-                                    
-                                    toggleEditMode();
-                                }
-                                
-                                function downloadExcel() {
-                                    // 創建工作簿
-                                    const wb = XLSX.utils.book_new();
-                                    
-                                    // 準備資料
-                                    const wsData = currentData.map(item => ({
-                                        '分機號碼': item['分機號碼'] || item['分機'] || item['Tel'] || '',
-                                        '使用單位': item['使用單位'] || item['單位'] || item['部門'] || '',
-                                        '線組編號': item['線組編號'] || '',
-                                        'G450 Port': item['G450 Port'] || '',
-                                        '分機種類': item['分機種類'] || '',
-                                        '副機數量': item['副機數量'] || '',
-                                        '對應DID號碼': item['對應DID號碼'] || '',
-                                        '裝機位置': item['裝機位置'] || '',
-                                        '拆遷記錄': item['拆遷記錄'] || '',
-                                        '備註': item['備註'] || ''
-                                    }));
-                                    
-                                    // 創建工作表
-                                    const ws = XLSX.utils.json_to_sheet(wsData);
-                                    
-                                    // 添加工作表到工作簿
-                                    XLSX.utils.book_append_sheet(wb, ws, '電話資料');
-                                    
-                                    // 下載檔案
-                                    const fileName = '電話資料_修改版_' + new Date().toISOString().slice(0, 10) + '.xlsx';
-                                    XLSX.writeFile(wb, fileName);
-                                }
-                                let isEditMode = false;
-                                let currentData = results;
-                                let originalData = JSON.parse(JSON.stringify(results));
-                            </script>
                         </body>
                         </html>
                     `);
@@ -804,146 +602,47 @@
                                     <div class="result-card">
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
-                            <span class="label">分機號碼：</span>
-                            <span class="value view-mode">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['分機號碼'] || result['分機'] || result['Tel'] || ''}" data-field="分機號碼" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">使用單位：</span>
-                            <span class="value view-mode">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['使用單位'] || result['單位'] || result['部門'] || ''}" data-field="使用單位" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">線組編號：</span>
-                            <span class="value view-mode">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['線組編號'] || ''}" data-field="線組編號" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">G450 Port：</span>
-                            <span class="value view-mode">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['G450 Port'] || ''}" data-field="G450 Port" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">分機種類：</span>
-                            <span class="value view-mode">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['分機種類'] || ''}" data-field="分機種類" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">副機數量：</span>
-                            <span class="value view-mode">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['副機數量'] || ''}" data-field="副機數量" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">DID號碼：</span>
-                            <span class="value view-mode">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['對應DID號碼'] || ''}" data-field="對應DID號碼" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">裝機位置：</span>
-                            <span class="value view-mode">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['裝機位置'] || ''}" data-field="裝機位置" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">拆遷紀錄：</span>
-                            <span class="value view-mode">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['拆遷記錄'] || ''}" data-field="拆遷記錄" data-index="${index}">
-                        </div>
-                        <div class="result-item">
-                            <span class="label">備註：</span>
-                            <span class="value view-mode">${highlightText(result['備註'] || '無資料', input)}</span>
-                            <input type="text" class="edit-input edit-mode" style="display:none;" value="${result['備註'] || ''}" data-field="備註" data-index="${index}">
-                        </div>
+                                            <span class="label">分機號碼：</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">使用單位：</span>
+                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號：</span>
+                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">G450 Port：</span>
+                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">分機種類：</span>
+                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">副機數量：</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">DID號碼：</span>
+                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">裝機位置：</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">拆遷紀錄：</span>
+                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">備註：</span>
+                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                        </div>
                                     </div>
                                 `).join('')}
-                                <script>
-                                    let isEditMode = false;
-                                    let currentData = ` + JSON.stringify(results) + `;
-                                    let originalData = JSON.parse(JSON.stringify(currentData));
-                                    
-                                    function toggleEditMode() {
-                                        isEditMode = !isEditMode;
-                                        const viewElements = document.querySelectorAll('.view-mode');
-                                        const editElements = document.querySelectorAll('.edit-mode');
-                                        const editBtn = document.querySelector('.edit-btn:not(.primary):not(.secondary):not(.success)');
-                                        const saveBtn = document.querySelector('.edit-btn.primary');
-                                        const cancelBtn = document.querySelector('.edit-btn.secondary');
-                                        
-                                        if (isEditMode) {
-                                            viewElements.forEach(el => el.style.display = 'none');
-                                            editElements.forEach(el => el.style.display = 'block');
-                                            if (editBtn) editBtn.style.display = 'none';
-                                            if (saveBtn) saveBtn.style.display = 'inline-block';
-                                            if (cancelBtn) cancelBtn.style.display = 'inline-block';
-                                        } else {
-                                            viewElements.forEach(el => el.style.display = 'block');
-                                            editElements.forEach(el => el.style.display = 'none');
-                                            if (editBtn) editBtn.style.display = 'inline-block';
-                                            if (saveBtn) saveBtn.style.display = 'none';
-                                            if (cancelBtn) cancelBtn.style.display = 'none';
-                                        }
-                                    }
-                                    
-                                    function saveChanges() {
-                                        const editInputs = document.querySelectorAll('.edit-input');
-                                        editInputs.forEach(input => {
-                                            const index = parseInt(input.dataset.index);
-                                            const field = input.dataset.field;
-                                            const value = input.value;
-                                            
-                                            if (currentData[index]) {
-                                                currentData[index][field] = value;
-                                            }
-                                        });
-                                        
-                                        editInputs.forEach(input => {
-                                            const index = parseInt(input.dataset.index);
-                                            const field = input.dataset.field;
-                                            const value = input.value;
-                                            const viewElement = input.parentElement.querySelector('.view-mode');
-                                            if (viewElement) {
-                                                viewElement.innerHTML = value || '無資料';
-                                            }
-                                        });
-                                        
-                                        toggleEditMode();
-                                        alert('變更已保存！');
-                                    }
-                                    
-                                    function cancelEdit() {
-                                        const editInputs = document.querySelectorAll('.edit-input');
-                                        editInputs.forEach(input => {
-                                            const index = parseInt(input.dataset.index);
-                                            const field = input.dataset.field;
-                                            const originalValue = originalData[index] ? originalData[index][field] || '' : '';
-                                            input.value = originalValue;
-                                        });
-                                        
-                                        toggleEditMode();
-                                    }
-                                    
-                                    function downloadExcel() {
-                                        const wb = XLSX.utils.book_new();
-                                        
-                                        const wsData = currentData.map(item => ({
-                                            '分機號碼': item['分機號碼'] || item['分機'] || item['Tel'] || '',
-                                            '使用單位': item['使用單位'] || item['單位'] || item['部門'] || '',
-                                            '線組編號': item['線組編號'] || '',
-                                            'G450 Port': item['G450 Port'] || '',
-                                            '分機種類': item['分機種類'] || '',
-                                            '副機數量': item['副機數量'] || '',
-                                            '對應DID號碼': item['對應DID號碼'] || '',
-                                            '裝機位置': item['裝機位置'] || '',
-                                            '拆遷記錄': item['拆遷記錄'] || '',
-                                            '備註': item['備註'] || ''
-                                        }));
-                                        
-                                        const ws = XLSX.utils.json_to_sheet(wsData);
-                                        XLSX.utils.book_append_sheet(wb, ws, '電話資料');
-                                        
-                                        const fileName = '電話資料_修改版_' + new Date().toISOString().slice(0, 10) + '.xlsx';
-                                        XLSX.writeFile(wb, fileName);
-                                    }
-                                </script>
                             </div>
                         </body>
                         </html>
