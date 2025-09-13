@@ -257,27 +257,29 @@
             try {
                 showLoadingStatus('正在載入資料...');
                 
-                // 同時載入兩個CSV檔案
+                // 同時載入兩個檔案
                 const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('./tel/電話資料.csv'),
-                    fetch('./tel/調度資料.csv')
+                    fetch('./tel/電話資料.xlsx'),
+                    fetch('./tel/調度資料.xlsx')
                 ]);
 
                 // 檢查回應狀態
                 if (!telResponse.ok) throw new Error('電話資料載入失敗');
                 if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
 
-                // 轉換為文字
-                const [telText, dispatchText] = await Promise.all([
-                    telResponse.text(),
-                    dispatchResponse.text()
+                // 轉換為 ArrayBuffer
+                const [telBuffer, dispatchBuffer] = await Promise.all([
+                    telResponse.arrayBuffer(),
+                    dispatchResponse.arrayBuffer()
                 ]);
 
                 // 處理電話資料
-                telData = parseCSV(telText);
+                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
+                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
 
                 // 處理調度資料
-                dispatchData = parseCSV(dispatchText);
+                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
+                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
 
                 // 將調度資料的數字轉換為字串格式
                 dispatchData = dispatchData.map(item => {
@@ -309,454 +311,16 @@
             }
         }
 
-        // CSV解析函數
-        function parseCSV(csvText) {
-            const lines = csvText.split('\n').filter(line => line.trim() !== '');
-            if (lines.length === 0) return [];
-            
-            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
-            const data = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',').map(value => value.trim().replace(/"/g, ''));
-                const row = {};
-                
-                headers.forEach((header, index) => {
-                    row[header] = values[index] || '';
-                });
-                
-                data.push(row);
-            }
-            
-            return data;
-        }
-
         // 頁面載入時執行
         window.addEventListener('DOMContentLoaded', () => {
             // 初始時禁用搜尋按鈕
-            const searchButtons = document.querySelectorAll('button[onclick*="search"]');
-            searchButtons.forEach(button => {
+            document.querySelectorAll('button').forEach(button => {
                 button.disabled = true;
             });
+            
+            // 載入資料
+            loadData();
         });
-
-        // 更新CSV檔案函數
-        async function manualLoadData() {
-            try {
-                showLoadingStatus('正在從Excel檔案更新CSV...');
-                
-                // 載入電話資料Excel檔案
-                try {
-                    const telResponse = await fetch('./tel/電話資料.xlsx');
-                    if (telResponse.ok) {
-                        const telArrayBuffer = await telResponse.arrayBuffer();
-                        const telWorkbook = XLSX.read(telArrayBuffer, { type: 'array' });
-                        const telWorksheet = telWorkbook.Sheets[telWorkbook.SheetNames[0]];
-                        const telCsvData = XLSX.utils.sheet_to_csv(telWorksheet);
-                        
-                        // 更新記憶體中的電話資料
-                        telData = parseCSV(telCsvData);
-                        
-                        // 下載更新後的CSV檔案
-                        downloadCSV(telCsvData, '電話資料.csv');
-                        
-                        console.log('電話資料Excel已轉換並覆蓋CSV');
-                    } else {
-                        console.warn('找不到電話資料Excel檔案');
-                    }
-                } catch (error) {
-                    console.error('載入電話資料Excel失敗:', error);
-                }
-                
-                // 載入調度資料Excel檔案
-                try {
-                    const dispatchResponse = await fetch('./tel/調度資料.xlsx');
-                    if (dispatchResponse.ok) {
-                        const dispatchArrayBuffer = await dispatchResponse.arrayBuffer();
-                        const dispatchWorkbook = XLSX.read(dispatchArrayBuffer, { type: 'array' });
-                        const dispatchWorksheet = dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]];
-                        const dispatchCsvData = XLSX.utils.sheet_to_csv(dispatchWorksheet);
-                        
-                        // 更新記憶體中的調度資料
-                        dispatchData = parseCSV(dispatchCsvData);
-                        // 將調度資料的數字轉換為字串格式
-                        dispatchData = dispatchData.map(item => {
-                            if (item['分機號碼'] !== undefined) {
-                                item['分機號碼'] = item['分機號碼'].toString();
-                            }
-                            return item;
-                        });
-                        
-                        // 下載更新後的CSV檔案
-                        downloadCSV(dispatchCsvData, '調度資料.csv');
-                        
-                        console.log('調度資料Excel已轉換並覆蓋CSV');
-                    } else {
-                        console.warn('找不到調度資料Excel檔案');
-                    }
-                } catch (error) {
-                    console.error('載入調度資料Excel失敗:', error);
-                }
-                
-                // 啟用搜尋按鈕
-                document.querySelectorAll('button').forEach(button => {
-                    button.disabled = false;
-                });
-                
-                showLoadingStatus('Excel檔案已轉換並覆蓋CSV檔案！');
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                removeLoadingStatus();
-                
-            } catch (error) {
-                console.error('更新CSV檔案錯誤:', error);
-                showLoadingStatus('更新CSV檔案失敗');
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                removeLoadingStatus();
-            }
-        }
-        
-        // 下載CSV檔案的函數
-        function downloadCSV(csvData, fileName) {
-            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', fileName);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // 更新分機資料到內存並回存CSV
-        function updateTelData(element) {
-            const index = parseInt(element.getAttribute('data-index'));
-            const field = element.getAttribute('data-field');
-            const newValue = element.textContent.trim();
-            
-            if (index >= 0 && index < telData.length) {
-                telData[index][field] = newValue;
-                console.log(`已更新分機資料 [${index}][${field}] = ${newValue}`);
-                
-                // 回存至CSV檔案
-                saveDataToCSV(telData, '電話資料.csv');
-                
-                // 顯示更新成功提示
-                showUpdateStatus('分機資料已更新並回存');
-            }
-        }
-
-        // 更新調度資料到內存並回存CSV
-        function updateDispatchData(element) {
-            const index = parseInt(element.getAttribute('data-index'));
-            const field = element.getAttribute('data-field');
-            const newValue = element.textContent.trim();
-            
-            if (index >= 0 && index < dispatchData.length) {
-                dispatchData[index][field] = newValue;
-                console.log(`已更新調度資料 [${index}][${field}] = ${newValue}`);
-                
-                // 回存至CSV檔案
-                saveDataToCSV(dispatchData, '調度資料.csv');
-                
-                // 顯示更新成功提示
-                showUpdateStatus('調度資料已更新並回存');
-            }
-        }
-        
-        // 將資料回存為CSV檔案
-        function saveDataToCSV(data, fileName) {
-            if (!data || data.length === 0) return;
-            
-            // 取得欄位名稱
-            const headers = Object.keys(data[0]);
-            
-            // 建立CSV內容
-            let csvContent = headers.join(',') + '\n';
-            
-            data.forEach(row => {
-                const values = headers.map(header => {
-                    let value = row[header] || '';
-                    // 如果值包含逗號或引號，需要用引號包圍
-                    if (value.toString().includes(',') || value.toString().includes('"')) {
-                        value = '"' + value.toString().replace(/"/g, '""') + '"';
-                    }
-                    return value;
-                });
-                csvContent += values.join(',') + '\n';
-            });
-            
-            // 下載CSV檔案
-            downloadCSV(csvContent, fileName);
-        }
-
-        // 顯示更新狀態
-        function showUpdateStatus(message) {
-            const statusDiv = document.createElement('div');
-            statusDiv.style.position = 'fixed';
-            statusDiv.style.top = '20px';
-            statusDiv.style.right = '20px';
-            statusDiv.style.padding = '10px 20px';
-            statusDiv.style.background = 'rgba(40, 167, 69, 0.9)';
-            statusDiv.style.color = 'white';
-            statusDiv.style.borderRadius = '4px';
-            statusDiv.style.zIndex = '1000';
-            statusDiv.style.fontSize = '14px';
-            statusDiv.style.fontWeight = 'bold';
-            statusDiv.textContent = message;
-            document.body.appendChild(statusDiv);
-            
-            // 2秒後自動移除
-            setTimeout(() => {
-                if (statusDiv.parentNode) {
-                    statusDiv.parentNode.removeChild(statusDiv);
-                }
-            }, 2000);
-        }
-
-        // 匯出資料功能
-        function exportData() {
-            if (!telData || !dispatchData) {
-                alert('請先載入資料後再匯出');
-                return;
-            }
-
-            // 創建匯出選項視窗
-            const exportWindow = window.open("", "_blank");
-            exportWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="zh-Hant">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>匯出資料</title>
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 0;
-                            padding: 20px;
-                            background-color: #f0f0f0;
-                        }
-                        .export-container {
-                            max-width: 600px;
-                            margin: 0 auto;
-                            background: white;
-                            padding: 30px;
-                            border-radius: 10px;
-                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                        }
-                        .export-option {
-                            background: #4169E1;
-                            color: white;
-                            padding: 15px 30px;
-                            margin: 10px 0;
-                            border: none;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            width: 100%;
-                            transition: background 0.3s;
-                        }
-                        .export-option:hover {
-                            background: #1E90FF;
-                        }
-                        .email-section {
-                            margin-top: 20px;
-                            padding: 20px;
-                            background: #f9f9f9;
-                            border-radius: 5px;
-                        }
-                        .email-input {
-                            width: 100%;
-                            padding: 10px;
-                            margin: 5px 0;
-                            border: 1px solid #ddd;
-                            border-radius: 3px;
-                            font-size: 14px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="export-container">
-                        <h2>匯出資料選項</h2>
-                        <button class="export-option" onclick="exportToExcel('tel')">匯出分機資料 (Excel)</button>
-                        <button class="export-option" onclick="exportToExcel('dispatch')">匯出調度資料 (Excel)</button>
-                        <button class="export-option" onclick="exportToExcel('both')">匯出全部資料 (Excel)</button>
-                        
-                        <div class="email-section">
-                            <h3>Email 寄送</h3>
-                            <input type="email" class="email-input" id="emailTo" placeholder="收件人信箱">
-                            <input type="text" class="email-input" id="emailSubject" placeholder="郵件主旨" value="資料匯出檔案">
-                            <textarea class="email-input" id="emailBody" placeholder="郵件內容" rows="4">請查收附件中的資料匯出檔案。</textarea>
-                            <button class="export-option" onclick="sendEmail()">寄送 Email</button>
-                        </div>
-                    </div>
-                    
-                    <script>
-                        const telData = ` + JSON.stringify(telData) + `;
-                        const dispatchData = ` + JSON.stringify(dispatchData) + `;
-                        
-                        async function exportToExcel(type) {
-                            try {
-                                let workbook = XLSX.utils.book_new();
-                                
-                                if (type === 'tel' || type === 'both') {
-                                    // 優先從CSV檔案讀取分機資料
-                                    try {
-                                        const telCsvResponse = await fetch('../tel/電話資料.csv');
-                                        if (telCsvResponse.ok) {
-                                            const telCsvText = await telCsvResponse.text();
-                                            const telCsvData = parseCSV(telCsvText);
-                                            const telSheet = XLSX.utils.json_to_sheet(telCsvData);
-                                            XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
-                                        } else {
-                                            throw new Error('CSV檔案不存在');
-                                        }
-                                    } catch (csvError) {
-                                        // 如果CSV檔案讀取失敗，使用記憶體中的資料
-                                        console.warn('使用記憶體中的分機資料:', csvError);
-                                        const telSheet = XLSX.utils.json_to_sheet(telData);
-                                        XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
-                                    }
-                                }
-                                
-                                if (type === 'dispatch' || type === 'both') {
-                                    // 優先從CSV檔案讀取調度資料
-                                    try {
-                                        const dispatchCsvResponse = await fetch('../tel/調度資料.csv');
-                                        if (dispatchCsvResponse.ok) {
-                                            const dispatchCsvText = await dispatchCsvResponse.text();
-                                            const dispatchCsvData = parseCSV(dispatchCsvText);
-                                            const dispatchSheet = XLSX.utils.json_to_sheet(dispatchCsvData);
-                                            XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
-                                        } else {
-                                            throw new Error('CSV檔案不存在');
-                                        }
-                                    } catch (csvError) {
-                                        // 如果CSV檔案讀取失敗，使用記憶體中的資料
-                                        console.warn('使用記憶體中的調度資料:', csvError);
-                                        const dispatchSheet = XLSX.utils.json_to_sheet(dispatchData);
-                                        XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
-                                    }
-                                }
-                                
-                                const fileName = type === 'tel' ? '分機資料.xlsx' : 
-                                               type === 'dispatch' ? '調度資料.xlsx' : '完整資料.xlsx';
-                                
-                                // 下載Excel檔案
-                                XLSX.writeFile(workbook, fileName);
-                                
-                                // 儲存Excel檔案供email使用
-                                window.currentExcelFile = {
-                                    workbook: workbook,
-                                    fileName: fileName
-                                };
-                                
-                                alert('Excel檔案已下載，可以使用Email功能寄送');
-                            } catch (error) {
-                                console.error('匯出Excel錯誤:', error);
-                                alert('匯出失敗，請重試');
-                            }
-                        }
-                        
-                        // CSV解析函數（在匯出視窗中使用）
-                        function parseCSV(csvText) {
-                            const lines = csvText.split('\n').filter(line => line.trim() !== '');
-                            if (lines.length === 0) return [];
-                            
-                            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
-                            const data = [];
-                            
-                            for (let i = 1; i < lines.length; i++) {
-                                const values = lines[i].split(',').map(value => value.trim().replace(/"/g, ''));
-                                const row = {};
-                                
-                                headers.forEach((header, index) => {
-                                    row[header] = values[index] || '';
-                                });
-                                
-                                data.push(row);
-                            }
-                            
-                            return data;
-                        }
-                        
-                        async function sendEmail() {
-                            const emailTo = document.getElementById('emailTo').value;
-                            const emailSubject = document.getElementById('emailSubject').value;
-                            const emailBody = document.getElementById('emailBody').value;
-                            
-                            if (!emailTo) {
-                                alert('請輸入收件人信箱');
-                                return;
-                            }
-                            
-                            try {
-                                // 從CSV檔案創建Excel檔案
-                                let workbook = XLSX.utils.book_new();
-                                
-                                // 讀取分機資料CSV
-                                try {
-                                    const telCsvResponse = await fetch('../tel/電話資料.csv');
-                                    if (telCsvResponse.ok) {
-                                        const telCsvText = await telCsvResponse.text();
-                                        const telCsvData = parseCSV(telCsvText);
-                                        const telSheet = XLSX.utils.json_to_sheet(telCsvData);
-                                        XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
-                                    } else {
-                                        // 使用記憶體中的資料
-                                        const telSheet = XLSX.utils.json_to_sheet(telData);
-                                        XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
-                                    }
-                                } catch (error) {
-                                    console.warn('讀取分機CSV失敗，使用記憶體資料:', error);
-                                    const telSheet = XLSX.utils.json_to_sheet(telData);
-                                    XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
-                                }
-                                
-                                // 讀取調度資料CSV
-                                try {
-                                    const dispatchCsvResponse = await fetch('../tel/調度資料.csv');
-                                    if (dispatchCsvResponse.ok) {
-                                        const dispatchCsvText = await dispatchCsvResponse.text();
-                                        const dispatchCsvData = parseCSV(dispatchCsvText);
-                                        const dispatchSheet = XLSX.utils.json_to_sheet(dispatchCsvData);
-                                        XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
-                                    } else {
-                                        // 使用記憶體中的資料
-                                        const dispatchSheet = XLSX.utils.json_to_sheet(dispatchData);
-                                        XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
-                                    }
-                                } catch (error) {
-                                    console.warn('讀取調度CSV失敗，使用記憶體資料:', error);
-                                    const dispatchSheet = XLSX.utils.json_to_sheet(dispatchData);
-                                    XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
-                                }
-                                
-                                // 先下載Excel檔案
-                                const fileName = '完整資料_' + new Date().toISOString().slice(0,10) + '.xlsx';
-                                XLSX.writeFile(workbook, fileName);
-                                
-                                // 開啟郵件程式
-                                const mailtoLink = 'mailto:' + emailTo + 
-                                    '?subject=' + encodeURIComponent(emailSubject) + 
-                                    '&body=' + encodeURIComponent(emailBody + '\n\n已為您準備Excel檔案：' + fileName + '\n請手動附加此檔案到郵件中。');
-                                window.location.href = mailtoLink;
-                                
-                                alert('Excel檔案已下載為：' + fileName + '\n郵件程式已開啟，請手動附加Excel檔案。');
-                                
-                            } catch (error) {
-                                console.error('Email發送準備錯誤:', error);
-                                alert('準備Email失敗，請重試');
-                            }
-                        }
-                    <\/script>
-                </body>
-                </html>
-            `);
-            exportWindow.document.close();
-        }
 
         function highlightText(text, searchTerm) {
             if (!text || !searchTerm) return text;
@@ -918,43 +482,43 @@
                                                 <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
                                                     <div class="result-item">
                                                         <span class="label">分機號碼：</span>
-                                                        <span class="value" contenteditable="true" data-field="分機號碼" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">使用單位：</span>
-                                                        <span class="value" contenteditable="true" data-field="使用單位" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號：</span>
-                                                        <span class="value" contenteditable="true" data-field="線組編號" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">G450 Port：</span>
-                                                        <span class="value" contenteditable="true" data-field="G450 Port" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">分機種類：</span>
-                                                        <span class="value" contenteditable="true" data-field="分機種類" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">副機數量：</span>
-                                                        <span class="value" contenteditable="true" data-field="副機數量" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">DID號碼：</span>
-                                                        <span class="value" contenteditable="true" data-field="對應DID號碼" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">裝機位置：</span>
-                                                        <span class="value" contenteditable="true" data-field="裝機位置" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">拆遷紀錄：</span>
-                                                        <span class="value" contenteditable="true" data-field="拆遷記錄" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">備註：</span>
-                                                        <span class="value" contenteditable="true" data-field="備註" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
                                                     </div>
                                                 </div>
                                             `).join('')}
@@ -1039,43 +603,43 @@
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
-                                            <span class="value" contenteditable="true" data-field="分機號碼" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" data-field="使用單位" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號：</span>
-                                            <span class="value" contenteditable="true" data-field="線組編號" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">G450 Port：</span>
-                                            <span class="value" contenteditable="true" data-field="G450 Port" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">分機種類：</span>
-                                            <span class="value" contenteditable="true" data-field="分機種類" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" data-field="副機數量" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">DID號碼：</span>
-                                            <span class="value" contenteditable="true" data-field="對應DID號碼" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" data-field="裝機位置" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">拆遷紀錄：</span>
-                                            <span class="value" contenteditable="true" data-field="拆遷記錄" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">備註：</span>
-                                            <span class="value" contenteditable="true" data-field="備註" data-index="${telData.indexOf(result)}" onblur="updateTelData(this)">${highlightText(result['備註'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -1234,49 +798,46 @@
                                     <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
                                         <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
                                         <div class="result-details">
-                                            ${items.map((result, itemIndex) => {
-                                                const originalIndex = dispatchData.findIndex(item => item === result);
-                                                return `
+                                            ${items.map((result, index) => `
                                                 <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
                                                     <div class="result-item">
                                                         <span class="label">分機號碼：</span>
-                                                        <span class="value" contenteditable="true" data-field="分機號碼" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">C端子位置：</span>
-                                                        <span class="value" contenteditable="true" data-field="C端子位置" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">LENS：</span>
-                                                        <span class="value" contenteditable="true" data-field="LENS" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(機房)：</span>
-                                                        <span class="value" contenteditable="true" data-field="線組編號(機房)" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">線組編號(現場)：</span>
-                                                        <span class="value" contenteditable="true" data-field="線組編號(現場)" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">使用單位：</span>
-                                                        <span class="value" contenteditable="true" data-field="使用單位" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">裝機位置：</span>
-                                                        <span class="value" contenteditable="true" data-field="裝機位置" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">副機數量：</span>
-                                                        <span class="value" contenteditable="true" data-field="副機數量" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                                     </div>
                                                     <div class="result-item">
                                                         <span class="label">連絡電話：</span>
-                                                        <span class="value" contenteditable="true" data-field="連絡電話" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
                                                     </div>
                                                 </div>
-                                                `;
-                                            }).join('')}
+                                            `).join('')}
                                         </div>
                                     </div>
                                 `).join('')}
@@ -1353,50 +914,47 @@
                                 <div class="search-summary">
                                     搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
                                 </div>
-                                ${results.map((result, index) => {
-                                    const originalIndex = dispatchData.findIndex(item => item === result);
-                                    return `
+                                ${results.map((result, index) => `
                                     <div class="result-card">
                                         <div class="result-header">搜尋結果 #${index + 1}</div>
                                         <div class="result-item">
                                             <span class="label">分機號碼：</span>
-                                            <span class="value" contenteditable="true" data-field="分機號碼" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">C端子位置：</span>
-                                            <span class="value" contenteditable="true" data-field="C端子位置" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">LENS：</span>
-                                            <span class="value" contenteditable="true" data-field="LENS" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(機房)：</span>
-                                            <span class="value" contenteditable="true" data-field="線組編號(機房)" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">線組編號(現場)：</span>
-                                            <span class="value" contenteditable="true" data-field="線組編號(現場)" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">使用單位：</span>
-                                            <span class="value" contenteditable="true" data-field="使用單位" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">裝機位置：</span>
-                                            <span class="value" contenteditable="true" data-field="裝機位置" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">副機數量：</span>
-                                            <span class="value" contenteditable="true" data-field="副機數量" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
                                         </div>
                                         <div class="result-item">
                                             <span class="label">連絡電話：</span>
-                                            <span class="value" contenteditable="true" data-field="連絡電話" data-index="${originalIndex}" onblur="updateDispatchData(this)">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
                                         </div>
                                     </div>
-                                    `;
-                                }).join('')}
+                                `).join('')}
                             </div>
                         </body>
                         </html>
@@ -1417,126 +975,6 @@
                 e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
             }
         });
-
-        // 更新分機資料函數
-        function updateTelData(element) {
-            const index = parseInt(element.getAttribute('data-index'));
-            const field = element.getAttribute('data-field');
-            const newValue = element.textContent.trim();
-            
-            if (index >= 0 && index < telData.length && field) {
-                // 更新記憶體中的資料
-                telData[index][field] = newValue;
-                
-                // 儲存到CSV檔案
-                saveTelDataToCSV();
-                
-                // 顯示更新成功訊息
-                showUpdateStatus('分機資料已更新並儲存');
-            }
-        }
-
-        // 更新調度資料函數
-        function updateDispatchData(element) {
-            const index = parseInt(element.getAttribute('data-index'));
-            const field = element.getAttribute('data-field');
-            const newValue = element.textContent.trim();
-            
-            if (index >= 0 && index < dispatchData.length && field) {
-                // 更新記憶體中的資料
-                dispatchData[index][field] = newValue;
-                
-                // 儲存到CSV檔案
-                saveDispatchDataToCSV();
-                
-                // 顯示更新成功訊息
-                showUpdateStatus('調度資料已更新並儲存');
-            }
-        }
-
-        // 儲存分機資料到CSV檔案
-        async function saveTelDataToCSV() {
-            try {
-                // 轉換資料為CSV格式
-                const headers = Object.keys(telData[0]);
-                const csvContent = [headers.join(',')]
-                    .concat(telData.map(row => 
-                        headers.map(header => {
-                            const value = row[header] || '';
-                            // 如果值包含逗號、引號或換行符，需要用引號包圍並轉義引號
-                            if (value.toString().includes(',') || value.toString().includes('"') || value.toString().includes('\n')) {
-                                return '"' + value.toString().replace(/"/g, '""') + '"';
-                            }
-                            return value;
-                        }).join(',')
-                    ))
-                    .join('\n');
-                
-                // 創建Blob並下載
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = '電話資料.csv';
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                // 提示使用者替換檔案
-                setTimeout(() => {
-                    alert('分機資料已下載，請將下載的「電話資料.csv」檔案替換到原本的位置以完成更新。');
-                }, 500);
-                
-                console.log('分機資料已儲存到CSV檔案');
-            } catch (error) {
-                console.error('儲存分機資料失敗:', error);
-                alert('儲存分機資料失敗: ' + error.message);
-            }
-        }
-
-        // 儲存調度資料到CSV檔案
-        async function saveDispatchDataToCSV() {
-            try {
-                // 轉換資料為CSV格式
-                const headers = Object.keys(dispatchData[0]);
-                const csvContent = [headers.join(',')]
-                    .concat(dispatchData.map(row => 
-                        headers.map(header => {
-                            const value = row[header] || '';
-                            // 如果值包含逗號、引號或換行符，需要用引號包圍並轉義引號
-                            if (value.toString().includes(',') || value.toString().includes('"') || value.toString().includes('\n')) {
-                                return '"' + value.toString().replace(/"/g, '""') + '"';
-                            }
-                            return value;
-                        }).join(',')
-                    ))
-                    .join('\n');
-                
-                // 創建Blob並下載
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = '調度資料.csv';
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                // 提示使用者替換檔案
-                setTimeout(() => {
-                    alert('調度資料已下載，請將下載的「調度資料.csv」檔案替換到原本的位置以完成更新。');
-                }, 500);
-                
-                console.log('調度資料已儲存到CSV檔案');
-            } catch (error) {
-                console.error('儲存調度資料失敗:', error);
-                alert('儲存調度資料失敗: ' + error.message);
-            }
-        }
     </script>
 </head>
 <body>
@@ -1550,12 +988,6 @@
         <!-- 新增調度電話搜尋區域 -->
         <input type="text" id="dispatchSearchInput" placeholder="搜尋調度電話..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
         <button onclick="searchDispatch()" style="background: linear-gradient(to bottom, #4169E1, #000080); color: white; font-weight: bold;">調度電話搜尋</button>
-        
-        <!-- 更新CSV檔案按鈕 -->
-        <button onclick="manualLoadData()" style="background: linear-gradient(to bottom, #FF8C00, #FF6347); color: white; font-weight: bold; margin-top: 15px;">更新CSV檔案</button>
-        
-        <!-- 匯出功能按鈕 -->
-        <button onclick="exportData()" style="background: linear-gradient(to bottom, #32CD32, #228B22); color: white; font-weight: bold; margin-top: 10px;">匯出資料</button>
     </div>
     <script>
         function searchImages() {
