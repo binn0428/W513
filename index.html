@@ -257,7 +257,7 @@
             try {
                 showLoadingStatus('正在載入資料...');
                 
-                // 同時載入兩個檔案
+                // 同時載入兩個Excel檔案
                 const [telResponse, dispatchResponse] = await Promise.all([
                     fetch('./tel/電話資料.xlsx'),
                     fetch('./tel/調度資料.xlsx')
@@ -311,6 +311,28 @@
             }
         }
 
+        // CSV解析函數
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+            
+            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(value => value.trim().replace(/"/g, ''));
+                const row = {};
+                
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                
+                data.push(row);
+            }
+            
+            return data;
+        }
+
         // 頁面載入時執行
         window.addEventListener('DOMContentLoaded', () => {
             // 初始時禁用搜尋按鈕
@@ -322,10 +344,99 @@
 
         // 手動載入資料函數
         function manualLoadData() {
-            loadData();
+            // 創建檔案選擇器
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xlsx,.xls';
+            fileInput.multiple = true;
+            
+            fileInput.onchange = async function(event) {
+                const files = event.target.files;
+                if (files.length === 0) return;
+                
+                try {
+                    showLoadingStatus('正在處理Excel檔案...');
+                    
+                    // 處理每個選擇的檔案
+                    for (let file of files) {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const csvData = XLSX.utils.sheet_to_csv(worksheet);
+                        
+                        // 根據檔案名稱決定儲存位置
+                        let fileName;
+                        if (file.name.includes('電話') || file.name.includes('tel')) {
+                            fileName = '電話資料.csv';
+                            telData = parseCSV(csvData);
+                        } else if (file.name.includes('調度') || file.name.includes('dispatch')) {
+                            fileName = '調度資料.csv';
+                            dispatchData = parseCSV(csvData);
+                            // 將調度資料的數字轉換為字串格式
+                            dispatchData = dispatchData.map(item => {
+                                if (item['分機號碼'] !== undefined) {
+                                    item['分機號碼'] = item['分機號碼'].toString();
+                                }
+                                return item;
+                            });
+                        } else {
+                            // 讓用戶選擇檔案類型
+                            const fileType = prompt('請選擇檔案類型：\n1. 電話資料\n2. 調度資料\n請輸入 1 或 2：');
+                            if (fileType === '1') {
+                                fileName = '電話資料.csv';
+                                telData = parseCSV(csvData);
+                            } else if (fileType === '2') {
+                                fileName = '調度資料.csv';
+                                dispatchData = parseCSV(csvData);
+                                dispatchData = dispatchData.map(item => {
+                                    if (item['分機號碼'] !== undefined) {
+                                        item['分機號碼'] = item['分機號碼'].toString();
+                                    }
+                                    return item;
+                                });
+                            } else {
+                                continue;
+                            }
+                        }
+                        
+                        // 下載轉換後的CSV檔案
+                        downloadCSV(csvData, fileName);
+                    }
+                    
+                    // 啟用搜尋按鈕
+                    document.querySelectorAll('button').forEach(button => {
+                        button.disabled = false;
+                    });
+                    
+                    showLoadingStatus('Excel檔案轉換完成！');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    removeLoadingStatus();
+                    
+                } catch (error) {
+                    console.error('檔案處理錯誤:', error);
+                    showLoadingStatus('檔案處理失敗');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    removeLoadingStatus();
+                }
+            };
+            
+            fileInput.click();
+        }
+        
+        // 下載CSV檔案的函數
+        function downloadCSV(csvData, fileName) {
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
-        // 更新分機資料到內存
+        // 更新分機資料到內存並回存CSV
         function updateTelData(element) {
             const index = parseInt(element.getAttribute('data-index'));
             const field = element.getAttribute('data-field');
@@ -335,12 +446,15 @@
                 telData[index][field] = newValue;
                 console.log(`已更新分機資料 [${index}][${field}] = ${newValue}`);
                 
+                // 回存至CSV檔案
+                saveDataToCSV(telData, '電話資料.csv');
+                
                 // 顯示更新成功提示
-                showUpdateStatus('分機資料已更新');
+                showUpdateStatus('分機資料已更新並回存');
             }
         }
 
-        // 更新調度資料到內存
+        // 更新調度資料到內存並回存CSV
         function updateDispatchData(element) {
             const index = parseInt(element.getAttribute('data-index'));
             const field = element.getAttribute('data-field');
@@ -350,9 +464,38 @@
                 dispatchData[index][field] = newValue;
                 console.log(`已更新調度資料 [${index}][${field}] = ${newValue}`);
                 
+                // 回存至CSV檔案
+                saveDataToCSV(dispatchData, '調度資料.csv');
+                
                 // 顯示更新成功提示
-                showUpdateStatus('調度資料已更新');
+                showUpdateStatus('調度資料已更新並回存');
             }
+        }
+        
+        // 將資料回存為CSV檔案
+        function saveDataToCSV(data, fileName) {
+            if (!data || data.length === 0) return;
+            
+            // 取得欄位名稱
+            const headers = Object.keys(data[0]);
+            
+            // 建立CSV內容
+            let csvContent = headers.join(',') + '\n';
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    let value = row[header] || '';
+                    // 如果值包含逗號或引號，需要用引號包圍
+                    if (value.toString().includes(',') || value.toString().includes('"')) {
+                        value = '"' + value.toString().replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                csvContent += values.join(',') + '\n';
+            });
+            
+            // 下載CSV檔案
+            downloadCSV(csvContent, fileName);
         }
 
         // 顯示更新狀態
@@ -462,23 +605,70 @@
                         const telData = ` + JSON.stringify(telData) + `;
                         const dispatchData = ` + JSON.stringify(dispatchData) + `;
                         
-                        function exportToExcel(type) {
-                            let workbook = XLSX.utils.book_new();
+                        async function exportToExcel(type) {
+                            try {
+                                let workbook = XLSX.utils.book_new();
+                                
+                                if (type === 'tel' || type === 'both') {
+                                    // 從最新的CSV檔案讀取分機資料
+                                    const telCsvResponse = await fetch('../tel/電話資料.csv');
+                                    if (telCsvResponse.ok) {
+                                        const telCsvText = await telCsvResponse.text();
+                                        const telCsvData = parseCSV(telCsvText);
+                                        const telSheet = XLSX.utils.json_to_sheet(telCsvData);
+                                        XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
+                                    } else {
+                                        // 如果CSV檔案不存在，使用記憶體中的資料
+                                        const telSheet = XLSX.utils.json_to_sheet(telData);
+                                        XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
+                                    }
+                                }
+                                
+                                if (type === 'dispatch' || type === 'both') {
+                                    // 從最新的CSV檔案讀取調度資料
+                                    const dispatchCsvResponse = await fetch('../tel/調度資料.csv');
+                                    if (dispatchCsvResponse.ok) {
+                                        const dispatchCsvText = await dispatchCsvResponse.text();
+                                        const dispatchCsvData = parseCSV(dispatchCsvText);
+                                        const dispatchSheet = XLSX.utils.json_to_sheet(dispatchCsvData);
+                                        XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
+                                    } else {
+                                        // 如果CSV檔案不存在，使用記憶體中的資料
+                                        const dispatchSheet = XLSX.utils.json_to_sheet(dispatchData);
+                                        XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
+                                    }
+                                }
+                                
+                                const fileName = type === 'tel' ? '分機資料.xlsx' : 
+                                               type === 'dispatch' ? '調度資料.xlsx' : '完整資料.xlsx';
+                                
+                                XLSX.writeFile(workbook, fileName);
+                            } catch (error) {
+                                console.error('匯出Excel錯誤:', error);
+                                alert('匯出失敗，請重試');
+                            }
+                        }
+                        
+                        // CSV解析函數（在匯出視窗中使用）
+                        function parseCSV(csvText) {
+                            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+                            if (lines.length === 0) return [];
                             
-                            if (type === 'tel' || type === 'both') {
-                                const telSheet = XLSX.utils.json_to_sheet(telData);
-                                XLSX.utils.book_append_sheet(workbook, telSheet, '分機資料');
+                            const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+                            const data = [];
+                            
+                            for (let i = 1; i < lines.length; i++) {
+                                const values = lines[i].split(',').map(value => value.trim().replace(/"/g, ''));
+                                const row = {};
+                                
+                                headers.forEach((header, index) => {
+                                    row[header] = values[index] || '';
+                                });
+                                
+                                data.push(row);
                             }
                             
-                            if (type === 'dispatch' || type === 'both') {
-                                const dispatchSheet = XLSX.utils.json_to_sheet(dispatchData);
-                                XLSX.utils.book_append_sheet(workbook, dispatchSheet, '調度資料');
-                            }
-                            
-                            const fileName = type === 'tel' ? '分機資料.xlsx' : 
-                                           type === 'dispatch' ? '調度資料.xlsx' : '完整資料.xlsx';
-                            
-                            XLSX.writeFile(workbook, fileName);
+                            return data;
                         }
                         
                         function sendEmail() {
