@@ -1,1762 +1,1081 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期貨交易數據回放</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <title>資料查詢</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #ffffff;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        .header h1 {
-            margin: 0 0 5px 0;
-            font-size: 24px;
-        }
-        .controls {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-            padding: 12px;
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            font-size: 14px;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            background-image: url('back.jpg'); /* 設定背景圖 */
+            background-size: cover; /* 背景圖覆蓋整個畫面 */
+            background-position: center; /* 背景圖置中 */
         }
-        .chart-container {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #2a2a2a;
-            border-radius: 10px;
-        }
-        .chart-wrapper {
-            position: relative;
-            height: 500px;
-        }
-        .chart-window {
-            position: fixed;
-            top: 50px;
-            width: 45%;
-            height: 80%;
-            background-color: #1a1a1a;
-            border: 2px solid #4CAF50;
-            border-radius: 10px;
-            padding: 20px;
-            z-index: 1000;
-            display: none;
-            overflow: auto;
-        }
-        .chart-window.left {
-            left: 2%;
-        }
-        .chart-window.right {
-            right: 2%;
-        }
-        .chart-window-header {
+        .container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #4CAF50;
+            flex-direction: column; /* 垂直排列 */
+            align-items: center; /* 置中對齊 */
         }
-        .chart-window-title {
-            color: #4CAF50;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .close-window {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .close-window:hover {
-            background-color: #d32f2f;
-        }
-
         button {
-            padding: 8px 16px;
-            background-color: #4CAF50;
-            color: white;
+            margin: 10px 0;
+            padding: 10px 20px;
+            font-size: 25px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            box-shadow: 0 6px #999;
+            transition: all 0.3s ease;
+            position: relative;
+            top: 0;
+            background: linear-gradient(to bottom, #4169E1, #0000CD);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         }
         button:hover {
-            background-color: #45a049;
+            background: linear-gradient(to bottom, #4169E1, #1E90FF);
         }
-        button:disabled {
-            background-color: #666;
-            cursor: not-allowed;
+        button:active {
+            top: 5px;
+            box-shadow: 0 1px #666;
+            background: linear-gradient(to bottom, #0000CD, #4169E1);
         }
-        .speed-control, .time-interval-control {
+        .option {
+            width: 100px;
+            height: 100px;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 6px;
-        }
-        .speed-control label, .time-control label, .outlier-control label {
-            font-size: 13px;
-            white-space: nowrap;
-        }
-        select {
-            padding: 4px 8px;
-            background-color: #3a3a3a;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        input[type="range"] {
-            width: 150px;
-        }
-        .outlier-control {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .window-btn {
-            padding: 6px 10px !important;
-            font-size: 12px !important;
-            background-color: #2196F3 !important;
-        }
-        .window-btn:hover {
-            background-color: #1976D2 !important;
-        }
-        .file-input {
-            margin-bottom: 12px;
-        }
-        input[type="file"] {
-            padding: 6px 8px;
-            background-color: #3a3a3a;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 5px;
-            font-size: 13px;
-        }
-        .status {
-            text-align: center;
-            margin: 8px 0;
-            font-size: 16px;
-        }
-        .progress {
-            width: 100%;
-            height: 10px;
-            background-color: #3a3a3a;
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        .progress-bar {
-            height: 100%;
-            background-color: #4CAF50;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        /* 分頁標籤樣式 */
-        .tabs {
-            display: flex;
-            background-color: #2d2d2d;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 0;
-            overflow: hidden;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 10px 10px;
-            background-color: #3d3d3d;
-            color: #cccccc;
-            border: none;
+            border: 1px solid #000;
+            margin: 5px;
+            font-size: 18px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
+            box-shadow: 0 6px #999;
             transition: all 0.3s ease;
-            border-right: 1px solid #555;
+            position: relative;
+            top: 0;
+            background: linear-gradient(to bottom, #90EE90, #32CD32);
         }
-        
-        .tab:last-child {
-            border-right: none;
+        .option:hover {
+            background: linear-gradient(to bottom, #90EE90, #1E90FF);
         }
-        
-        .tab.active {
-            background-color: #4CAF50;
-            color: #ffffff;
-        }
-        
-        .tab:hover:not(.active) {
-            background-color: #4d4d4d;
-            color: #ffffff;
-        }
-        
-        .tab-content {
-            display: none;
-            background-color: #2d2d2d;
-            border-radius: 0 0 8px 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-        
-        .tab-content.active {
-            display: block;
+        .option:active {
+            top: 5px;
+            box-shadow: 0 1px #666;
+            background: linear-gradient(to bottom, #32CD32, #90EE90);
         }
     </style>
+    <script>
+        function openNewPage(group, buttonNames, imagePaths) {
+            const newWindow = window.open("", "_blank");
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="zh-Hant">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${group} 選項</title>
+                    <style>
+                        body {
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            margin: 0;
+                            padding: 20px;
+                            font-family: Arial, sans-serif;
+                            box-sizing: border-box;
+                        }
+                        .option {
+                            width: 100px;
+                            height: 100px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            border: 1px solid #000;
+                            margin: 5px;
+                            font-size: 18px;
+                            cursor: pointer;
+                            background-color: rgba(57, 255, 20, 0.8);
+                            color: black;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 5px #666;
+                            outline: none;
+                        }
+                        .option:hover {
+                            background-color: rgba(57, 255, 20, 1);
+                        }
+                        /* 新增圖片顯示視窗的樣式 */
+                        .image-window {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: white;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 1000;
+                        }
+                        .image-window img {
+                            max-width: 100%;
+                            max-height: 100%;
+                            object-fit: contain;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${Array.from({ length: buttonNames.length }, (_, i) => `
+                        <div class="option" onclick="window.open('${imagePaths[i]}', '_blank', 'width=800,height=600').document.write('<html><head><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:white;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src=\\'${imagePaths[i]}\\' /></body></html>')">
+                            ${buttonNames[i]}
+                        </div>
+                    `).join('')}
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        }
+
+        function searchImages() {
+            const input = document.getElementById('searchInput').value.toLowerCase().trim(); // 去除前後空白
+            if (input === "") {
+                alert('請輸入搜尋內容'); // 提示用戶輸入內容
+                return; // 退出函數
+            }
+            const images = [
+             
+            ];
+            const filteredImages = images.filter(image => image.toLowerCase().includes(input));
+            if (filteredImages.length > 0) {
+                const newWindow = window.open("", "_blank");
+                newWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="zh-Hant">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>搜尋結果</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                min-height: 100vh;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                background: #f0f0f0;
+                            }
+                            .back-button {
+                                position: fixed;
+                                top: 20px;
+                                left: 20px;
+                                padding: 10px 20px;
+                                background: #007bff;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                z-index: 1000;
+                            }
+                            .back-button:hover {
+                                background: #0056b3;
+                            }
+                            .image-container {
+                                width: 100%;
+                                max-width: 100vw;
+                                padding: 20px;
+                                box-sizing: border-box;
+                            }
+                            img {
+                                width: 100%;
+                                height: auto;
+                                max-height: 90vh;
+                                object-fit: contain;
+                                display: block;
+                                margin: 10px auto;
+                                background: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <button class="back-button" onclick="window.close()">返回上一頁</button>
+                        <div class="image-container">
+                            ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
+                        </div>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+            } else {
+                alert('未找到符合的圖片');
+            }
+        }
+
+        // 頁面載入時自動讀取分機資料和調度資料
+        let telData = null;
+        let dispatchData = null;
+
+        // 添加載入狀態指示器
+        function showLoadingStatus(message) {
+            removeLoadingStatus();
+            const statusDiv = document.createElement('div');
+            statusDiv.id = 'loadingStatus';
+            statusDiv.style.position = 'fixed';
+            statusDiv.style.top = '50%';
+            statusDiv.style.left = '50%';
+            statusDiv.style.transform = 'translate(-50%, -50%)';
+            statusDiv.style.padding = '15px 30px';
+            statusDiv.style.background = message.includes('完成') ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            statusDiv.style.color = 'white';
+            statusDiv.style.borderRadius = '4px';
+            statusDiv.style.zIndex = '1000';
+            statusDiv.style.fontSize = '16px';
+            statusDiv.style.fontWeight = 'bold';
+            statusDiv.style.transition = 'opacity 0.3s ease';
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+        }
+
+        function removeLoadingStatus() {
+            const statusDiv = document.getElementById('loadingStatus');
+            if (statusDiv && statusDiv.parentNode) {
+                statusDiv.parentNode.removeChild(statusDiv);
+            }
+        }
+
+        // 資料載入函數
+        async function loadData() {
+            try {
+                showLoadingStatus('正在載入資料...');
+                
+                // 同時載入兩個檔案
+                const [telResponse, dispatchResponse] = await Promise.all([
+                    fetch('./tel/電話資料.xlsx'),
+                    fetch('./tel/調度資料.xlsx')
+                ]);
+
+                // 檢查回應狀態
+                if (!telResponse.ok) throw new Error('電話資料載入失敗');
+                if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
+
+                // 轉換為 ArrayBuffer
+                const [telBuffer, dispatchBuffer] = await Promise.all([
+                    telResponse.arrayBuffer(),
+                    dispatchResponse.arrayBuffer()
+                ]);
+
+                // 處理電話資料
+                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
+                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
+
+                // 處理調度資料
+                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
+                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
+
+                // 將調度資料的數字轉換為字串格式
+                dispatchData = dispatchData.map(item => {
+                    if (item['分機號碼'] !== undefined) {
+                        item['分機號碼'] = item['分機號碼'].toString();
+                    }
+                    return item;
+                });
+
+                // 啟用搜尋按鈕
+                document.querySelectorAll('button').forEach(button => {
+                    button.disabled = false;
+                });
+
+                // 顯示成功訊息
+                showLoadingStatus('資料載入完成！');
+                
+                // 縮短顯示時間到 500 毫秒
+                await new Promise(resolve => setTimeout(resolve, 200));
+                removeLoadingStatus();
+
+            } catch (error) {
+                console.error('資料載入錯誤:', error);
+                showLoadingStatus('資料載入失敗，請重新整理頁面');
+                
+                // 縮短錯誤訊息顯示時間到 1000 毫秒
+                await new Promise(resolve => setTimeout(resolve, 500));
+                removeLoadingStatus();
+            }
+        }
+
+        // 頁面載入時執行
+        window.addEventListener('DOMContentLoaded', () => {
+            // 初始時禁用搜尋按鈕
+            document.querySelectorAll('button').forEach(button => {
+                button.disabled = true;
+            });
+            
+            // 載入資料
+            loadData();
+        });
+
+        function highlightText(text, searchTerm) {
+            if (!text || !searchTerm) return text;
+            const searchTermLower = searchTerm.toLowerCase();
+            const textLower = text.toString().toLowerCase();
+            if (!textLower.includes(searchTermLower)) return text;
+            
+            const startIndex = textLower.indexOf(searchTermLower);
+            const endIndex = startIndex + searchTerm.length;
+            const originalMatchedText = text.toString().substring(startIndex, endIndex);
+            
+            return text.toString().replace(
+                originalMatchedText,
+                `<span class="highlight">${originalMatchedText}</span>`
+            );
+        }
+
+        function searchTel() {
+            const input = document.getElementById('telSearchInput').value.trim();
+            if (input === "") {
+                alert('請輸入搜尋內容');
+                return;
+            }
+
+            const results = telData.filter(item => {
+                return Object.values(item).some(value => {
+                    if (value === null || value === undefined) return false;
+                    return value.toString().toLowerCase().includes(input.toLowerCase());
+                });
+            });
+
+            if (results.length > 0) {
+                // 準備所有結果的 Telegram 訊息內容
+                let telegramMessage = '分機搜尋結果:\n';
+                results.forEach((result, index) => {
+                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                    telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
+                    telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
+                    telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
+                    telegramMessage += `G450 Port: ${result['G450 Port'] || '無資料'}\n`;
+                    telegramMessage += `分機種類: ${result['分機種類'] || '無資料'}\n`;
+                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
+                    telegramMessage += `DID號碼: ${result['對應DID號碼'] || '無資料'}\n`;
+                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
+                    telegramMessage += `拆遷紀錄: ${result['拆遷記錄'] || '無資料'}\n`;
+                    telegramMessage += `備註: ${result['備註'] || '無資料'}\n`;
+                });
+
+                // 發送到 Telegram
+                const botToken = '5615970654:AAEiOd-m4fmQkps70wkZlvcwLvguk12FLNk';
+                const chatId = '-677659610';
+                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: telegramMessage
+                    })
+                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
+
+                // 如果結果超過2筆，顯示分類視窗
+                if (results.length > 2) {
+                    // 根據匹配欄位分類
+                    const groupedResults = {};
+                    const fields = ['分機號碼', '使用單位', '線組編號', 'G450 Port', '分機種類', '副機數量', 'DID號碼', '裝機位置', '拆遷紀錄', '備註'];
+                    
+                    results.forEach(result => {
+                        fields.forEach(field => {
+                            const value = result[field];
+                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
+                                if (!groupedResults[field]) {
+                                    groupedResults[field] = [];
+                                }
+                                if (!groupedResults[field].includes(result)) {
+                                    groupedResults[field].push(result);
+                                }
+                            }
+                        });
+                    });
+
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>分機搜尋結果分類</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .category-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .category-card {
+                                    background-color: #fff;
+                                    padding: 15px;
+                                    margin-bottom: 15px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    cursor: pointer;
+                                    transition: background-color 0.3s;
+                                }
+                                .category-card:hover {
+                                    background-color: #f5f5f5;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .result-details {
+                                    display: none;
+                                    margin-top: 10px;
+                                    padding: 10px;
+                                    background-color: #f9f9f9;
+                                    border-radius: 5px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="category-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                ${Object.entries(groupedResults).map(([field, items]) => `
+                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
+                                        <div class="result-details">
+                                            ${items.map((result, index) => `
+                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                    <div class="result-item">
+                                                        <span class="label">分機號碼：</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">使用單位：</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號：</span>
+                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">G450 Port：</span>
+                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">分機種類：</span>
+                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">副機數量：</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">DID號碼：</span>
+                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">裝機位置：</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">拆遷紀錄：</span>
+                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">備註：</span>
+                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                } else {
+                    // 如果結果少於或等於2筆，直接顯示詳細資訊
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>分機搜尋結果</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .results-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .result-card {
+                                    background-color: #fff;
+                                    padding: 20px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    margin-bottom: 20px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .result-header {
+                                    background-color: #4169E1;
+                                    color: white;
+                                    padding: 10px;
+                                    border-radius: 5px 5px 0 0;
+                                    margin-bottom: 10px;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="results-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                ${results.map((result, index) => `
+                                    <div class="result-card">
+                                        <div class="result-header">搜尋結果 #${index + 1}</div>
+                                        <div class="result-item">
+                                            <span class="label">分機號碼：</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">使用單位：</span>
+                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號：</span>
+                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">G450 Port：</span>
+                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">分機種類：</span>
+                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">副機數量：</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">DID號碼：</span>
+                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">裝機位置：</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">拆遷紀錄：</span>
+                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">備註：</span>
+                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                }
+            } else {
+                alert('未找到符合的分機資料');
+            }
+        }
+
+        function searchDispatch() {
+            const input = document.getElementById('dispatchSearchInput').value.trim();
+            if (input === "") {
+                alert('請輸入搜尋內容');
+                return;
+            }
+
+            if (!dispatchData || dispatchData.length === 0) {
+                alert('調度資料尚未載入完成，請稍後再試');
+                return;
+            }
+
+            const results = dispatchData.filter(item => {
+                return Object.values(item).some(value => {
+                    if (value === null || value === undefined) return false;
+                    return value.toString().toLowerCase().includes(input.toLowerCase());
+                });
+            });
+
+            if (results.length > 0) {
+                // 準備所有結果的 Telegram 訊息內容
+                let telegramMessage = '調度電話搜尋結果:\n';
+                results.forEach((result, index) => {
+                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
+                    telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
+                    telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
+                    telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
+                    telegramMessage += `線組編號(機房): ${result['線組編號(機房)'] || '無資料'}\n`;
+                    telegramMessage += `線組編號(現場): ${result['線組編號(現場)'] || '無資料'}\n`;
+                    telegramMessage += `使用單位: ${result['使用單位'] || '無資料'}\n`;
+                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
+                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
+                    telegramMessage += `連絡電話: ${result['連絡電話'] || '無資料'}\n`;
+                });
+
+                // 發送到 Telegram
+                const botToken = '5615970654:AAEiOd-m4fmQkps70wkZlvcwLvguk12FLNk';
+                const chatId = '-677659610';
+                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: telegramMessage
+                    })
+                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
+
+                // 如果結果超過2筆，顯示分類視窗
+                if (results.length > 2) {
+                    // 根據匹配欄位分類
+                    const groupedResults = {};
+                    const fields = ['分機號碼', 'C端子位置', 'LENS', '線組編號(機房)', '線組編號(現場)', '使用單位', '裝機位置', '副機數量', '連絡電話'];
+                    
+                    results.forEach(result => {
+                        fields.forEach(field => {
+                            const value = result[field];
+                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
+                                if (!groupedResults[field]) {
+                                    groupedResults[field] = [];
+                                }
+                                if (!groupedResults[field].includes(result)) {
+                                    groupedResults[field].push(result);
+                                }
+                            }
+                        });
+                    });
+
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>調度電話搜尋結果分類</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .category-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .category-card {
+                                    background-color: #fff;
+                                    padding: 15px;
+                                    margin-bottom: 15px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    cursor: pointer;
+                                    transition: background-color 0.3s;
+                                }
+                                .category-card:hover {
+                                    background-color: #f5f5f5;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .result-details {
+                                    display: none;
+                                    margin-top: 10px;
+                                    padding: 10px;
+                                    background-color: #f9f9f9;
+                                    border-radius: 5px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="category-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                ${Object.entries(groupedResults).map(([field, items]) => `
+                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
+                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
+                                        <div class="result-details">
+                                            ${items.map((result, index) => `
+                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
+                                                    <div class="result-item">
+                                                        <span class="label">分機號碼：</span>
+                                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">C端子位置：</span>
+                                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">LENS：</span>
+                                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號(機房)：</span>
+                                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">線組編號(現場)：</span>
+                                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">使用單位：</span>
+                                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">裝機位置：</span>
+                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">副機數量：</span>
+                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                                    </div>
+                                                    <div class="result-item">
+                                                        <span class="label">連絡電話：</span>
+                                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                } else {
+                    // 如果結果少於或等於2筆，直接顯示詳細資訊
+                    const resultWindow = window.open("", "_blank");
+                    resultWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-Hant">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>調度電話搜尋結果</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background-color: #f0f0f0;
+                                }
+                                .results-container {
+                                    max-width: 800px;
+                                    margin: 0 auto;
+                                }
+                                .result-card {
+                                    background-color: #fff;
+                                    padding: 20px;
+                                    border-radius: 5px;
+                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                    margin-bottom: 20px;
+                                }
+                                .result-item {
+                                    display: flex;
+                                    padding: 8px 0;
+                                    border-bottom: 1px solid #eee;
+                                }
+                                .label {
+                                    font-weight: bold;
+                                    width: 120px;
+                                    color: #333;
+                                }
+                                .value {
+                                    flex-grow: 1;
+                                    color: #666;
+                                }
+                                .result-header {
+                                    background-color: #4169E1;
+                                    color: white;
+                                    padding: 10px;
+                                    border-radius: 5px 5px 0 0;
+                                    margin-bottom: 10px;
+                                }
+                                .search-summary {
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                    color: #333;
+                                    font-size: 1.2em;
+                                }
+                                .highlight {
+                                    background-color: #ffeb3b;
+                                    padding: 2px 4px;
+                                    border-radius: 2px;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="results-container">
+                                <div class="search-summary">
+                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
+                                </div>
+                                ${results.map((result, index) => `
+                                    <div class="result-card">
+                                        <div class="result-header">搜尋結果 #${index + 1}</div>
+                                        <div class="result-item">
+                                            <span class="label">分機號碼：</span>
+                                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">C端子位置：</span>
+                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">LENS：</span>
+                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號(機房)：</span>
+                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">線組編號(現場)：</span>
+                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">使用單位：</span>
+                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">裝機位置：</span>
+                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">副機數量：</span>
+                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
+                                        </div>
+                                        <div class="result-item">
+                                            <span class="label">連絡電話：</span>
+                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </body>
+                        </html>
+                    `);
+                    resultWindow.document.close();
+                }
+            } else {
+                alert('未找到符合的調度電話資料');
+            }
+        }
+
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault(); // 禁止右鍵菜單
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>期貨交易數據回放系統</h1>
-        </div>
-        
-        <div class="file-input">
-            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                    <label style="font-size: 13px;">數據源 1:</label>
-                    <input type="file" id="jsonFile1" accept=".json" />
-                    <button onclick="loadFile(1)" style="padding: 4px 8px; font-size: 12px;">載入數據 1</button>
-                    <span id="file1Status" style="font-size: 11px; color: #888;">未載入</span>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                    <label style="font-size: 13px;">數據源 2:</label>
-                    <input type="file" id="jsonFile2" accept=".json" />
-                    <button onclick="loadFile(2)" style="padding: 4px 8px; font-size: 12px;">載入數據 2</button>
-                    <span id="file2Status" style="font-size: 11px; color: #888;">未載入</span>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                    <label style="font-size: 13px;">當前顯示:</label>
-                    <select id="dataSource" onchange="switchDataSource()" disabled style="font-size: 12px; padding: 4px 8px;">
-                        <option value="1">數據源 1</option>
-                        <option value="2">數據源 2</option>
-                        <option value="compare">比較模式</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <button id="playBtn" onclick="togglePlay()" disabled>播放</button>
-            <button onclick="resetReplay()" disabled id="resetBtn">重置</button>
-            <button class="window-btn" onclick="openBothChartWindows()">開啟雙視窗</button>
-            <div class="speed-control">
-                <label>回放速度:</label>
-                <input type="range" id="speedSlider" min="1" max="20" value="5" />
-                <span id="speedValue">5x</span>
-            </div>
-            <div class="time-control">
-                <label>播放時間:</label>
-                <select id="timeInterval">
-                    <option value="all" selected>全部 (8:45-13:45)</option>
-                    <option value="settlement">結算時間 (13:00-13:45)</option>
-                </select>
-            </div>
-            <div class="outlier-control">
-                <label>
-                    <input type="checkbox" id="enableOutlierFilter" checked /> 啟用異常值過濾
-                </label>
-                <label>過濾閾值:</label>
-                <input type="range" id="outlierThreshold" min="100" max="1000" step="50" value="500" />
-                <span id="thresholdValue">500點</span>
-            </div>
-        </div>
-        
-        <div class="status" id="status">請載入JSON數據文件</div>
-        <div class="progress">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-        
-        <!-- 分頁標籤 -->
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab(0)">圖表一 - 期貨指數及買賣力道</button>
-            <button class="tab" onclick="switchTab(1)">圖表二 - 結算預估價及加權指數</button>
-        </div>
-        
-        <!-- 分頁內容 -->
-        <div class="tab-content active" id="tab-0">
-            <div class="chart-container">
-                <h3>圖表一: 期貨指數及買賣力道回放</h3>
-                <div class="chart-wrapper">
-                    <canvas id="chart1"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="tab-1">
-            <div class="chart-container">
-                <h3>圖表二: 結算預估價及加權指數</h3>
-                <div class="chart-wrapper">
-                    <canvas id="chart2"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+        <input type="text" id="searchInput" placeholder="搜尋圖片..." style="font-size: 20px; width: 300px;" />
+        <button onclick="searchImages()" style="background: linear-gradient(to bottom, #32CD32, #228B22); color: yellow; font-weight: bold; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);">天車與PA資料搜尋</button>
+        <!-- 新增分機搜尋區域 -->
+        <input type="text" id="telSearchInput" placeholder="搜尋分機..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
+        <button onclick="searchTel()" style="background: linear-gradient(to bottom, #FF6B6B, #CD5C5C); color: white; font-weight: bold;">分機資料搜尋</button>
 
-    <!-- 浮動圖表視窗 -->
-    <div id="chartWindow1" class="chart-window left">
-        <div class="chart-window-header">
-            <div class="chart-window-title">圖表一: 期貨指數及買賣力道回放</div>
-            <button class="close-window" onclick="closeChartWindow('chart1')">&times;</button>
-        </div>
-        <div class="chart-wrapper">
-            <canvas id="chart1Window"></canvas>
-        </div>
+        <!-- 新增調度電話搜尋區域 -->
+        <input type="text" id="dispatchSearchInput" placeholder="搜尋調度電話..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
+        <button onclick="searchDispatch()" style="background: linear-gradient(to bottom, #4169E1, #000080); color: white; font-weight: bold;">調度電話搜尋</button>
     </div>
-
-    <div id="chartWindow2" class="chart-window right">
-        <div class="chart-window-header">
-            <div class="chart-window-title">圖表二: 結算預估價及加權指數</div>
-            <button class="close-window" onclick="closeChartWindow('chart2')">&times;</button>
-        </div>
-        <div class="chart-wrapper">
-            <canvas id="chart2Window"></canvas>
-        </div>
-    </div>
-
     <script>
-        let tradingData = null;
-        let originalTradingData = null;
-        let tradingData2 = null;
-        let originalTradingData2 = null;
-        let currentDataSource = 1;
-        let isPlaying = false;
-        let currentIndex = 0;
-        let playInterval = null;
-        let chart1 = null;
-        let chart2 = null;
-        let chart1Window = null;
-        let chart2Window = null;
-        let allTimes = [];
-        let filteredTimes = [];
-        
-        // 分頁切換函數
-        function switchTab(tabIndex) {
-            // 移除所有分頁的active類別
-            const tabs = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => tab.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            // 添加active類別到選中的分頁
-            tabs[tabIndex].classList.add('active');
-            tabContents[tabIndex].classList.add('active');
-            
-            // 延遲調整圖表大小，確保容器已經顯示
-            setTimeout(() => {
-                if (tabIndex === 0 && chart1) {
-                    chart1.resize();
-                } else if (tabIndex === 1 && chart2) {
-                    chart2.resize();
-                }
-            }, 100);
-        }
-        
-        // 視窗管理函數
-        function openChartWindow(chartType) {
-            if (chartType === 'chart1') {
-                document.getElementById('chartWindow1').style.display = 'block';
-                if (!chart1Window) {
-                    initWindowChart('chart1Window', 'chart1');
-                }
-            } else if (chartType === 'chart2') {
-                document.getElementById('chartWindow2').style.display = 'block';
-                if (!chart2Window) {
-                    initWindowChart('chart2Window', 'chart2');
-                }
+        function searchImages() {
+            const input = document.getElementById('searchInput').value.toLowerCase().trim(); // 去除前後空白
+            if (input === "") {
+                alert('請輸入搜尋內容'); // 提示用戶輸入內容
+                return; // 退出函數
             }
-        }
-        
-        function closeChartWindow(chartType) {
-            if (chartType === 'chart1') {
-                document.getElementById('chartWindow1').style.display = 'none';
-            } else if (chartType === 'chart2') {
-                document.getElementById('chartWindow2').style.display = 'none';
-            }
-        }
-        
-        function openBothChartWindows() {
-            openChartWindow('chart1');
-            openChartWindow('chart2');
-        }
-        
-        function closeAllChartWindows() {
-            closeChartWindow('chart1');
-            closeChartWindow('chart2');
-        }
-        
-        function initWindowChart(canvasId, chartType) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            
-            if (chartType === 'chart1') {
-                chart1Window = new Chart(ctx, getChart1Config());
-            } else if (chartType === 'chart2') {
-                chart2Window = new Chart(ctx, getChart2Config());
-            }
-        }
-        let openPrice = null;
-        
-        // 獲取圖表一配置
-        function getChart1Config() {
-            return {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {
-                            label: '開盤價',
-                            data: [],
-                            borderColor: '#FFD700',
-                            backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5
-                        },
-                        {
-                            label: '今高',
-                            data: [],
-                            borderColor: '#FF6B6B',
-                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5
-                        },
-                        {
-                            label: '今低',
-                            data: [],
-                            borderColor: '#4ECDC4',
-                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5
-                        },
-                        {
-                            label: '小台指數',
-                            data: [],
-                            borderColor: '#00FF00',
-                            backgroundColor: 'rgba(0, 255, 0, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5,
-                            segment: {
-                                borderColor: function(ctx) {
-                                    if (!window.openPrice) return '#00FF00';
-                                    
-                                    const openPrice = window.openPrice;
-                                    const p0 = ctx.p0.parsed.y;
-                                    const p1 = ctx.p1.parsed.y;
-                                    
-                                    if (p0 >= openPrice && p1 >= openPrice) {
-                                        return '#FF0000';
-                                    } else if (p0 < openPrice && p1 < openPrice) {
-                                        return '#00FF00';
-                                    } else {
-                                        return p1 >= openPrice ? '#FF0000' : '#00FF00';
-                                    }
-                                },
-                                backgroundColor: function(ctx) {
-                                    if (!window.openPrice) return 'rgba(0, 255, 0, 0.1)';
-                                    
-                                    const openPrice = window.openPrice;
-                                    const p0 = ctx.p0.parsed.y;
-                                    const p1 = ctx.p1.parsed.y;
-                                    
-                                    if (p0 >= openPrice && p1 >= openPrice) {
-                                        return 'rgba(255, 0, 0, 0.1)';
-                                    } else if (p0 < openPrice && p1 < openPrice) {
-                                        return 'rgba(0, 255, 0, 0.1)';
-                                    } else {
-                                        return p1 >= openPrice ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)';
-                                    }
-                                }
+            const images = [
+             'group_4/6SCC80T1.jpg', 'group_4/6SCC80T2.jpg', 'group_4/A11611.jpg', 'group_4/A11612.jpg', 'group_4/A35311.jpg', 'group_4/A53411.jpg', 'group_4/B35411.jpg', 'group_4/B35412.jpg', 
+             'group_4/B35421.jpg', 'group_4/B35422.jpg', 'group_4/B54611.jpg', 'group_4/B54612.jpg', 'group_4/B57311.jpg', 'group_4/B59121.jpg', 'group_4/B59122.jpg', 
+             'group_4/B62111.jpg', 'group_4/B62112.jpg', 'group_4/B62221.jpg', 'group_4/B62222.jpg', 'group_4/C11011.jpg', 'group_4/C11012.jpg', 'group_4/C11211.jpg','group_4/C11711.jpg', 
+             'group_4/C11712.jpg', 'group_4/C11811.jpg', 'group_4/C11911.jpg', 'group_4/C11912.jpg', 'group_4/C35311.jpg', 'group_4/C35312.jpg', 'group_4/C35321.jpg', 'group_4/C35322.jpg', 'group_4/C35611.jpg', 
+             'group_4/C35612.jpg', 'group_4/C35711.jpg', 'group_4/C35712.jpg', 'group_4/C52411.jpg', 'group_4/C53511.jpg', 'group_4/C53512.jpg', 'group_4/C54711.jpg', 
+             'group_4/C54712.jpg', 'group_4/CSU11.jpg', 'group_4/CSU12.jpg', 'group_4/CSU21.jpg', 'group_4/CSU22.jpg', 'group_4/D35311.jpg', 'group_4/D35312.jpg', 
+             'group_4/D35321.jpg', 'group_4/D35322.jpg', 'group_4/D56421.jpg', 'group_4/D56422.jpg', 'group_4/E54411.jpg', 'group_4/E54412.jpg', 'group_4/E54511.jpg', 
+             'group_4/E54512.jpg', 'group_4/F61011.jpg', 'group_4/F61012.jpg', 'group_4/F61021.jpg', 'group_4/F61022.jpg', 'group_4/F61031.jpg', 'group_4/F61032.jpg', 
+             'group_4/H52521.jpg', 'group_4/H53511.jpg', 'group_4/H53512.jpg', 'group_4/H53521.jpg', 'group_4/H53522.jpg', 'group_4/J48111.jpg', 'group_4/J48112.jpg', 
+             'group_4/J61011.jpg', 'group_4/J61012.jpg', 'group_4/J61021.jpg', 'group_4/J61022.jpg', 'group_4/J61031.jpg', 'group_4/J610320.jpg', 'group_4/J61041.jpg', 
+             'group_4/J61042.jpg', 'group_4/J61051.jpg', 'group_4/J61052.jpg', 'group_4/J61061.jpg', 'group_4/J61062.jpg', 'group_4/J61071.jpg', 'group_4/J61072.jpg', 
+             'group_4/J64111.jpg', 'group_4/J64112.jpg', 'group_4/J68011.jpg', 'group_4/J68012.jpg', 'group_4/J68021.jpg', 'group_4/J68022.jpg', 'group_4/J68031.jpg', 
+             'group_4/J68032.jpg', 'group_4/J68041.jpg', 'group_4/J68042.jpg', 'group_4/J68051.jpg', 'group_4/J68052.jpg', 'group_4/J68071.jpg', 'group_4/J68072.jpg', 
+             'group_4/K61611.jpg', 'group_4/K61612.jpg', 'group_4/K61621.jpg', 'group_4/K61622.jpg', 'group_4/K64221.jpg', 'group_4/K64222.jpg', 'group_4/N62011.jpg', 
+             'group_4/N62012.jpg', 'group_4/N62021.jpg', 'group_4/Q53121.jpg', 'group_4/Q53122.jpg', 'group_4/Q54121.jpg','group_4/Q61711.jpg', 'group_4/Q61712.jpg', 'group_4/Q61721.jpg', 'group_4/Q61722.jpg', 
+             'group_4/T35311.jpg', 'group_4/T35312.jpg', 'group_4/T35321.jpg', 'group_4/T35322.jpg', 'group_4/T48311.jpg', 'group_4/T48312.jpg', 'group_4/T51711.jpg', 
+             'group_4/T51712.jpg', 'group_4/T51821.jpg', 'group_4/T51822.jpg', 'group_4/T68021.jpg', 'group_4/T68022.jpg', 'group_4/T68041.jpg', 'group_4/T68042.jpg', 
+             'group_4/T68051.jpg', 'group_4/U61251.jpg', 'group_4/U61252.jpg', 'group_4/U62121.jpg', 'group_4/U62122.jpg', 'group_4/Y52121.jpg', 'group_4/Y53111.jpg', 
+             'group_4/Y53112.jpg', 'group_4/Y54101.jpg', 'group_4/Y54102.jpg', 'group_4/Z68011.jpg', 'group_4/Z68012.jpg', 'group_4/Z68021.jpg', 'group_4/Z68022.jpg', 
+             'group_4/Z68031.jpg', 'group_4/Z68032.jpg', 'group_4/Z68041.jpg', 'group_4/Z68042.jpg', 'group_4/Z68061.jpg', 'group_4/Z68062.jpg', 'group_4/Z68071.jpg', 'group_4/W5core.jpg','group_4/Z68072.jpg', 'group_4/Z68081.jpg', 'group_4/Z68082.jpg', 'group_4/CM.jpg', 
+             'group_4/密碼.jpg', 'group_4/分機1.jpg', 'group_4/分機2.jpg', 'group_4/分機3.jpg', 'group_4/分機4.jpg', 'group_4/分機5.jpg', 'group_4/分機6.jpg', 'group_4/分機7.jpg','group_4/分機8.jpg',   
+             'group_3/C346立體倉儲高聲電話系統圖.JPG', 'group_3/PKL-檢驗站高聲電話系統圖.JPG', 
+             'group_3/SCC-4.5 E-F  4161-4162天車  三階.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0001.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0002.JPG', 'group_3/W3三階轉爐廠間高聲電話系統圖(含位置).JPG',
+             'group_3/W3對4121天車CO系統位置圖.JPG', 'group_3/W3對4151天車RO系統位置圖.JPG', 'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系統圖.JPG',
+             'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG',
+             'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 'group_3/Y52電氣鍍鋅場(EGL)PA位置圖.JPG',
+             'group_3/Y52電氣鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/g4.jpg','group_3/Y515_系統圖.jpg','group_3/Y515_位置說明_第1頁.jpg','group_3/W212CDQ-南側導焦車_系統圖.JPG','group_3/W212CDQ-南側導焦車_位置說明_第1頁.JPG',
+            ];
+            const filteredImages = images.filter(image => image.toLowerCase().includes(input));
+            if (filteredImages.length > 0) {
+                const newWindow = window.open("", "_blank");
+                newWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="zh-Hant">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>搜尋結果</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                min-height: 100vh;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                background: #f0f0f0;
                             }
-                        },
-                        {
-                            label: '買賣差(正值)',
-                            data: [],
-                            borderColor: '#FF69B4',
-                            backgroundColor: 'rgba(255, 105, 180, 0.5)',
-                            borderWidth: 1,
-                            fill: '+1',
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5
-                        },
-                        {
-                            label: '買賣差(負值)',
-                            data: [],
-                            borderColor: '#32CD32',
-                            backgroundColor: 'rgba(50, 205, 50, 0.5)',
-                            borderWidth: 1,
-                            fill: 0,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5
-                        },
-                        {
-                            label: '小台指數_數據源2',
-                            data: [],
-                            borderColor: '#FF8C00',
-                            backgroundColor: 'rgba(255, 140, 0, 0.1)',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5,
-                            hidden: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            top: 10,
-                            bottom: 30,
-                            left: 10,
-                            right: 10
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#ffffff'
+                            .image-container {
+                                width: 100%;
+                                max-width: 100vw;
+                                padding: 20px;
+                                box-sizing: border-box;
                             }
-                        },
-                        datalabels: {
-                            display: function(context) {
-                                const dataset = context.dataset;
-                                const dataIndex = context.dataIndex;
-                                
-                                if (dataset.label === '買賣差(正值)' || dataset.label === '買賣差(負值)') {
-                                    return false;
-                                }
-                                
-                                return dataIndex === dataset.data.length - 1;
-                            },
-                            backgroundColor: function(context) {
-                                const dataset = context.dataset;
-                                const dataIndex = context.dataIndex;
-                                
-                                if (dataset.label === '小台指數' && window.openPrice && dataset.data[dataIndex]) {
-                                    const currentValue = dataset.data[dataIndex].y;
-                                    return currentValue < window.openPrice ? 'rgba(255, 0, 0, 0.4)' : 'rgba(0, 255, 0, 0.4)';
-                                }
-                                return 'transparent';
-                            },
-                            borderColor: 'transparent',
-                            borderRadius: 4,
-                            borderWidth: 0,
-                            color: function(context) {
-                                const dataset = context.dataset;
-                                const dataIndex = context.dataIndex;
-                                
-                                if (dataset.label === '小台指數' && window.openPrice && dataset.data[dataIndex]) {
-                                    const currentValue = dataset.data[dataIndex].y;
-                                    return currentValue >= window.openPrice ? '#FF0000' : '#00FF00';
-                                }
-                                
-                                return context.dataset.borderColor;
-                            },
-                            font: {
-                                size: 20,
-                                weight: 'bold'
-                            },
-                            padding: 2,
-                            formatter: function(value, context) {
-                                if (value && value.y !== undefined) {
-                                    return value.y.toFixed(2);
-                                }
-                                return '';
-                            },
-                            anchor: 'center',
-                            align: 'bottom',
-                            offset: -30
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                    minute: 'HH:mm',
-                                    hour: 'HH:mm'
-                                },
-                                tooltipFormat: 'yyyy-MM-dd HH:mm:ss'
-                            },
-                            display: true,
-                            ticks: {
-                                color: '#ffffff',
-                                maxTicksLimit: 10
-                            },
-                            grid: {
-                                color: '#444444',
-                                display: true
+                            img {
+                                width: 100%;
+                                height: auto;
+                                max-height: 90vh;
+                                object-fit: contain;
+                                display: block;
+                                margin: 10px auto;
+                                background: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                             }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            beginAtZero: false,
-                            title: {
-                                display: true,
-                                text: '價格 (開盤/今高/今低/小台指數/加權指數)',
-                                color: '#ffffff'
-                            },
-                            ticks: {
-                                color: '#ffffff'
-                            },
-                            grid: {
-                                color: '#444444'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: '買賣差 (相對開盤價)',
-                                color: '#ffffff'
-                            },
-                            ticks: {
-                                color: '#ffffff'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                                color: '#666666'
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        // 獲取圖表二配置
-        function getChart2Config() {
-            return {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {
-                            label: '結算價預估',
-                            data: [],
-                            borderColor: '#FFA500',
-                            backgroundColor: 'rgba(255, 165, 0, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5
-                        },
-                        {
-                            label: '加權指數',
-                            data: [],
-                            borderColor: '#FFFFFF',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5,
-                            segment: {
-                                borderColor: function(ctx) {
-                                    const chart = ctx.chart;
-                                    const settlementDataset = chart.data.datasets[0];
-                                    const weightedIndexDataset = chart.data.datasets[1];
-                                    
-                                    const p0Index = ctx.p0DataIndex;
-                                    const p1Index = ctx.p1DataIndex;
-                                    
-                                    if (settlementDataset.data[p1Index] && weightedIndexDataset.data[p1Index]) {
-                                        const settlementValue = settlementDataset.data[p1Index].y;
-                                        const weightedIndexValue = weightedIndexDataset.data[p1Index].y;
-                                        
-                                        return weightedIndexValue > settlementValue ? '#FF0000' : '#00FF00';
-                                    }
-                                    
-                                    return '#FFFFFF';
-                                },
-                                backgroundColor: function(ctx) {
-                                    const chart = ctx.chart;
-                                    const settlementDataset = chart.data.datasets[0];
-                                    const weightedIndexDataset = chart.data.datasets[1];
-                                    
-                                    const p0Index = ctx.p0DataIndex;
-                                    const p1Index = ctx.p1DataIndex;
-                                    
-                                    if (settlementDataset.data[p1Index] && weightedIndexDataset.data[p1Index]) {
-                                        const settlementValue = settlementDataset.data[p1Index].y;
-                                        const weightedIndexValue = weightedIndexDataset.data[p1Index].y;
-                                        
-                                        return weightedIndexValue > settlementValue ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)';
-                                    }
-                                    
-                                    return 'rgba(255, 255, 255, 0.1)';
-                                }
-                            }
-                        },
-                        {
-                            label: '結算預估價_數據源2',
-                            data: [],
-                            borderColor: '#9370DB',
-                            backgroundColor: 'rgba(147, 112, 219, 0.1)',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            pointHoverRadius: 5,
-                            hidden: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            top: 50,
-                            bottom: 10,
-                            left: 10,
-                            right: 45
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#ffffff'
-                            }
-                        },
-                        datalabels: {
-                            display: function(context) {
-                                const dataset = context.dataset;
-                                const dataIndex = context.dataIndex;
-                                return dataIndex === dataset.data.length - 1;
-                            },
-                            backgroundColor: function(context) {
-                                const dataset = context.dataset;
-                                const dataIndex = context.dataIndex;
-                                
-                                if (dataset.label === '加權指數') {
-                                    const chart = context.chart;
-                                    const settlementDataset = chart.data.datasets[0];
-                                    const weightedIndexDataset = chart.data.datasets[1];
-                                    
-                                    if (settlementDataset.data[dataIndex] && weightedIndexDataset.data[dataIndex]) {
-                                        const settlementValue = settlementDataset.data[dataIndex].y;
-                                        const weightedIndexValue = weightedIndexDataset.data[dataIndex].y;
-                                        
-                                        return weightedIndexValue <= settlementValue ? 'rgba(255, 0, 0, 0.4)' : 'rgba(0, 255, 0, 0.4)';
-                                    }
-                                    return 'rgba(255, 255, 255, 0.8)';
-                                }
-                                return 'transparent';
-                            },
-                            borderColor: 'transparent',
-                            borderRadius: 4,
-                            borderWidth: 0,
-                            color: function(context) {
-                                const dataset = context.dataset;
-                                const dataIndex = context.dataIndex;
-                                
-                                if (dataset.label === '加權指數') {
-                                    const chart = context.chart;
-                                    const settlementDataset = chart.data.datasets[0];
-                                    const weightedIndexDataset = chart.data.datasets[1];
-                                    
-                                    if (settlementDataset.data[dataIndex] && weightedIndexDataset.data[dataIndex]) {
-                                        const settlementValue = settlementDataset.data[dataIndex].y;
-                                        const weightedIndexValue = weightedIndexDataset.data[dataIndex].y;
-                                        
-                                        return weightedIndexValue > settlementValue ? '#FF0000' : '#00FF00';
-                                    }
-                                }
-                                
-                                return context.dataset.borderColor;
-                            },
-                            font: {
-                                size: 20,
-                                weight: 'bold'
-                            },
-                            padding: 2,
-                            formatter: function(value, context) {
-                                if (value && value.y !== undefined) {
-                                    return value.y.toFixed(2);
-                                }
-                                return '';
-                            },
-                            anchor: 'center',
-                            align: 'bottom',
-                            offset: -30
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                    minute: 'HH:mm',
-                                    hour: 'HH:mm'
-                                },
-                                tooltipFormat: 'yyyy-MM-dd HH:mm:ss'
-                            },
-                            display: true,
-                            ticks: {
-                                color: '#ffffff',
-                                maxTicksLimit: 10
-                            },
-                            grid: {
-                                color: '#444444',
-                                display: true
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            beginAtZero: false,
-                            title: {
-                                display: true,
-                                text: '價格',
-                                color: '#ffffff'
-                            },
-                            ticks: {
-                                color: '#ffffff'
-                            },
-                            grid: {
-                                color: '#444444'
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        // 初始化圖表
-        function initCharts() {
-            // 註冊數據標籤插件
-            Chart.register(ChartDataLabels);
-            
-            const ctx1 = document.getElementById('chart1').getContext('2d');
-            const ctx2 = document.getElementById('chart2').getContext('2d');
-            
-            // 使用配置函數創建圖表
-            chart1 = new Chart(ctx1, getChart1Config());
-            chart2 = new Chart(ctx2, getChart2Config());
-        }
-
-        
-        // 輔助函數：根據標籤查找數據集索引
-        function findDatasetIndex(chart, label) {
-            return chart.data.datasets.findIndex(dataset => dataset.label === label);
-        }
-
-        // 數據格式轉換函數
-        function convertDataFormat(rawData) {
-            // 檢查是否為新格式 (有data數組)
-            if (rawData.data && Array.isArray(rawData.data)) {
-                console.log('檢測到新格式數據，正在轉換...');
-                const convertedData = {};
-                
-                // 初始化數據結構
-                const dataKeys = ['開盤價', '今高', '今低', '小台指數', '買賣差', '加權指數', '結算價預估'];
-                dataKeys.forEach(key => {
-                    convertedData[key] = {
-                        times: [],
-                        values: []
-                    };
-                });
-                
-                // 轉換數據
-                rawData.data.forEach(item => {
-                    let time = item.時間 || item.timestamp;
-                    if (time) {
-                        // 統一時間格式處理
-                        if (typeof time === 'string') {
-                            // 處理中文時間格式 "2025/9/17 上午8:45:00"
-                            if (time.includes('上午') || time.includes('下午')) {
-                                // 解析中文時間格式
-                                let timeStr = time;
-                                let isPM = time.includes('下午');
-                                
-                                // 移除上午/下午標記
-                                timeStr = timeStr.replace(/[上下]午/g, '').trim();
-                                
-                                // 解析日期和時間部分
-                                const parts = timeStr.split(' ');
-                                if (parts.length === 2) {
-                                    const datePart = parts[0]; // "2025/9/17"
-                                    const timePart = parts[1]; // "8:45:00"
-                                    
-                                    // 處理時間部分的12小時制轉24小時制
-                                    const timeComponents = timePart.split(':');
-                                    let hours = parseInt(timeComponents[0]);
-                                    
-                                    if (isPM && hours !== 12) {
-                                        hours += 12;
-                                    } else if (!isPM && hours === 12) {
-                                        hours = 0;
-                                    }
-                                    
-                                    // 重新組合時間
-                                    const formattedTime = `${hours.toString().padStart(2, '0')}:${timeComponents[1]}:${timeComponents[2]}`;
-                                    const newTime = `${datePart} ${formattedTime}`;
-                                    
-                                    console.log('時間轉換:', time, '->', newTime);
-                                    time = newTime;
-                                }
-                            }
-                        }
-                        
-                        dataKeys.forEach(key => {
-                            if (item[key] !== undefined && item[key] !== null) {
-                                convertedData[key].times.push(time);
-                                convertedData[key].values.push(item[key]);
-                            }
-                        });
-                    }
-                });
-                
-                console.log('數據轉換完成，轉換後的數據鍵:', Object.keys(convertedData));
-                
-                // 添加調試信息
-                Object.keys(convertedData).forEach(key => {
-                    console.log(`${key}: ${convertedData[key].times.length} 個時間點`);
-                    if (convertedData[key].times.length > 0) {
-                        console.log(`${key} 第一個時間點:`, convertedData[key].times[0]);
-                        console.log(`${key} 第一個數值:`, convertedData[key].values[0]);
-                    }
-                });
-                
-                return convertedData;
+                        </style>
+                    </head>
+                    <body>
+                        <div class="image-container">
+                            ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
+                        </div>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
             } else {
-                console.log('檢測到舊格式數據，無需轉換');
-                return rawData;
+                alert('未找到符合的圖片');
             }
         }
-        
-        // 載入文件
-        function loadFile(sourceNumber = 1) {
-            const fileInput = document.getElementById(`jsonFile${sourceNumber}`);
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert(`請選擇數據源 ${sourceNumber} 的JSON文件`);
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const rawData = JSON.parse(e.target.result);
-                    
-                    // 轉換數據格式
-                    const convertedData = convertDataFormat(rawData);
-                    
-                    if (sourceNumber === 1) {
-                        // 保存原始數據備份到數據源1
-                        originalTradingData = JSON.parse(JSON.stringify(convertedData));
-                        tradingData = JSON.parse(JSON.stringify(convertedData));
-                        document.getElementById('file1Status').textContent = `已載入: ${file.name}`;
-                        document.getElementById('file1Status').style.color = '#4CAF50';
-                    } else {
-                        // 保存原始數據備份到數據源2
-                        originalTradingData2 = JSON.parse(JSON.stringify(convertedData));
-                        tradingData2 = JSON.parse(JSON.stringify(convertedData));
-                        document.getElementById('file2Status').textContent = `已載入: ${file.name}`;
-                        document.getElementById('file2Status').style.color = '#4CAF50';
-                    }
-                    
-                    // 載入數據後自動切換到該數據源並處理數據
-                    currentDataSource = sourceNumber;
-                    document.getElementById('dataSource').value = sourceNumber;
-                    processData();
-                    
-                    // 啟用控制項
-                    document.getElementById('playBtn').disabled = false;
-                    document.getElementById('resetBtn').disabled = false;
-                    document.getElementById('dataSource').disabled = false;
-                    
-                    updateStatus();
-                } catch (error) {
-                    alert(`數據源 ${sourceNumber} JSON文件格式錯誤: ` + error.message);
-                    if (sourceNumber === 1) {
-                        document.getElementById('file1Status').textContent = '載入失敗';
-                        document.getElementById('file1Status').style.color = '#f44336';
-                    } else {
-                        document.getElementById('file2Status').textContent = '載入失敗';
-                        document.getElementById('file2Status').style.color = '#f44336';
-                    }
-                }
-            };
-            reader.readAsText(file);
-        }
-        
-        // 切換數據源
-        function switchDataSource() {
-            const selectedSource = document.getElementById('dataSource').value;
-            
-            if (selectedSource === 'compare') {
-                // 比較模式 - 需要兩個數據源都載入
-                if (!originalTradingData || !originalTradingData2) {
-                    alert('比較模式需要載入兩個數據源');
-                    document.getElementById('dataSource').value = currentDataSource;
-                    return;
-                }
-                currentDataSource = 'compare';
-                processCompareData();
-            } else {
-                const sourceNum = parseInt(selectedSource);
-                if (sourceNum === 1 && !originalTradingData) {
-                    alert('數據源 1 尚未載入');
-                    document.getElementById('dataSource').value = currentDataSource;
-                    return;
-                }
-                if (sourceNum === 2 && !originalTradingData2) {
-                    alert('數據源 2 尚未載入');
-                    document.getElementById('dataSource').value = currentDataSource;
-                    return;
-                }
-                
-                currentDataSource = sourceNum;
-                
-                // 切換到對應的數據源
-                if (sourceNum === 1) {
-                    tradingData = JSON.parse(JSON.stringify(originalTradingData));
-                } else {
-                    tradingData = JSON.parse(JSON.stringify(originalTradingData2));
-                }
-                
-                processData();
-            }
-            
-            resetReplay();
-            updateStatus();
-        }
-        
-        // 處理比較模式數據
-        function processCompareData() {
-            // 合併兩個數據源進行比較
-            tradingData = JSON.parse(JSON.stringify(originalTradingData));
-            
-            // 為比較模式添加第二個數據源的數據
-            if (originalTradingData2) {
-                // 添加數據源2的小台指數作為比較線
-                if (originalTradingData2.小台指數) {
-                    tradingData['小台指數_數據源2'] = {
-                        times: [...originalTradingData2.小台指數.times],
-                        values: [...originalTradingData2.小台指數.values]
-                    };
-                }
-                
-                // 添加數據源2的結算預估價作為比較線
-                if (originalTradingData2.結算預估價) {
-                    tradingData['結算預估價_數據源2'] = {
-                        times: [...originalTradingData2.結算預估價.times],
-                        values: [...originalTradingData2.結算預估價.values]
-                    };
-                }
-            }
-            
-            processData();
-        }
-        
-        // 更新狀態顯示
-        function updateStatus() {
-            let statusText = '';
-            if (currentDataSource === 'compare') {
-                statusText = '比較模式 - 數據載入完成，可以開始回放';
-            } else {
-                statusText = `數據源 ${currentDataSource} - 數據載入完成，可以開始回放`;
-            }
-            document.getElementById('status').textContent = statusText;
-        }
-        
-        // 異常值檢測函數
-        function detectOutliers(values, threshold = 500) {
-            if (!values || values.length < 3) return [];
-            
-            const outlierIndices = [];
-            
-            for (let i = 1; i < values.length - 1; i++) {
-                const prev = values[i - 1];
-                const curr = values[i];
-                const next = values[i + 1];
-                
-                if (prev !== null && curr !== null && next !== null) {
-                    // 計算前後差值的絕對點數
-                    const prevDiff = Math.abs(curr - prev);
-                    const nextDiff = Math.abs(next - curr);
-                    
-                    // 如果前後差值任一大於等於閾值，標記為異常值
-                    if (prevDiff >= threshold || nextDiff >= threshold) {
-                        outlierIndices.push(i);
-                        console.log(`檢測到異常值: 索引 ${i}, 值 ${curr}, 前值 ${prev}, 後值 ${next}, 前差 ${prevDiff.toFixed(2)}點, 後差 ${nextDiff.toFixed(2)}點`);
-                    }
-                }
-            }
-            
-            return outlierIndices;
-        }
-        
-        // 過濾異常值函數
-        function filterOutliers(dataKey, threshold = 500) {
-            if (!tradingData[dataKey] || !tradingData[dataKey].values) return;
-            
-            const values = tradingData[dataKey].values;
-            const times = tradingData[dataKey].times;
-            const outlierIndices = detectOutliers(values, threshold);
-            
-            if (outlierIndices.length > 0) {
-                console.log(`${dataKey} 檢測到 ${outlierIndices.length} 個異常值，將進行過濾`);
-                
-                // 創建新的過濾後數組
-                const filteredValues = [];
-                const filteredTimes = [];
-                
-                for (let i = 0; i < values.length; i++) {
-                    if (!outlierIndices.includes(i)) {
-                        filteredValues.push(values[i]);
-                        filteredTimes.push(times[i]);
-                    }
-                }
-                
-                // 更新原始數據
-                tradingData[dataKey].values = filteredValues;
-                tradingData[dataKey].times = filteredTimes;
-                
-                console.log(`${dataKey} 過濾完成，從 ${values.length} 個數據點減少到 ${filteredValues.length} 個`);
-            }
-        }
-        
-        // 處理數據
-        function processData() {
-            // 根據當前數據源選擇正確的原始數據
-            let sourceData;
-            if (currentDataSource === 1) {
-                if (!originalTradingData) return;
-                sourceData = originalTradingData;
-            } else if (currentDataSource === 2) {
-                if (!originalTradingData2) return;
-                sourceData = originalTradingData2;
-            } else if (currentDataSource === 'compare') {
-                // 比較模式使用已經合併的tradingData
-                sourceData = tradingData;
-            } else {
-                return;
-            }
-            
-            // 從選擇的原始數據重新開始處理
-            tradingData = JSON.parse(JSON.stringify(sourceData));
-            
-            console.log('Processing data:', Object.keys(tradingData));
-            
-            // 對主要數據進行異常值過濾（根據使用者設定）
-            const enableFilter = document.getElementById('enableOutlierFilter').checked;
-            if (enableFilter) {
-                const threshold = parseInt(document.getElementById('outlierThreshold').value);
-                const dataKeysToFilter = ['開盤價', '小台指數', '加權指數', '結算價預估', '今高', '今低'];
-                dataKeysToFilter.forEach(key => {
-                    if (tradingData[key]) {
-                        filterOutliers(key, threshold);
-                    }
-                });
-                console.log(`異常值過濾已啟用，閾值: ${threshold}點`);
-            } else {
-                console.log('異常值過濾已停用');
-            }
-            
-            // 收集所有時間點（使用當前數據源確保時間點完整性）
-            const timeSet = new Set();
-            Object.keys(sourceData).forEach(key => {
-                if (sourceData[key] && sourceData[key].times) {
-                    sourceData[key].times.forEach(time => timeSet.add(time));
-                }
-            });
-            
-            allTimes = Array.from(timeSet).sort((a, b) => {
-                // 確保時間排序正確
-                const timeA = new Date(a).getTime();
-                const timeB = new Date(b).getTime();
-                return timeA - timeB;
-            });
-            
-            console.log('Total time points:', allTimes.length);
-            console.log('First few times:', allTimes.slice(0, 5));
-            
-
-            
-            // 根據當前設定過濾時間
-            filterTimesByInterval();
-            
-            // 設置開盤價
-            if (tradingData['開盤價'] && tradingData['開盤價'].values && tradingData['開盤價'].values.length > 0) {
-                openPrice = tradingData['開盤價'].values[0];
-                window.openPrice = openPrice; // 設置全局變量供segment函數使用
-                console.log('Opening price:', openPrice);
-            }
-            
-            resetReplay();
-        }
-        
-        // 獲取指定時間的數據值
-        function getValueAtTime(dataKey, targetTime) {
-            if (!tradingData[dataKey] || !tradingData[dataKey].times) return null;
-            
-            const times = tradingData[dataKey].times;
-            const values = tradingData[dataKey].values;
-            
-            // 找到最接近的時間點
-            let closestIndex = -1;
-            for (let i = 0; i < times.length; i++) {
-                if (times[i] <= targetTime) {
-                    closestIndex = i;
-                } else {
-                    break;
-                }
-            }
-            
-            return closestIndex >= 0 ? values[closestIndex] : null;
-        }
-        
-        // 分析可用的小時區間
-
-        
-        // 根據時間區間過濾時間點
-        function filterTimesByInterval() {
-            const intervalType = document.getElementById('timeInterval').value;
-            
-            console.log('Filtering by interval:', intervalType);
-            
-            if (intervalType === 'all') {
-                // 全部時間 (8:45-13:45)
-                filteredTimes = allTimes.filter(time => {
-                    const date = new Date(time);
-                    const hour = date.getHours();
-                    const minute = date.getMinutes();
-                    // 8:45 到 13:45
-                    return (hour > 8 || (hour === 8 && minute >= 45)) && 
-                           (hour < 13 || (hour === 13 && minute <= 45));
-                });
-            } else if (intervalType === 'settlement') {
-                // 結算時間 (13:00-13:45)
-                filteredTimes = allTimes.filter(time => {
-                    const date = new Date(time);
-                    const hour = date.getHours();
-                    const minute = date.getMinutes();
-                    return hour === 13 && minute >= 0 && minute <= 45;
-                });
-            } else {
-                filteredTimes = [...allTimes];
-            }
-            
-            console.log(`Filtered times: ${filteredTimes.length} out of ${allTimes.length}`);
-            
-            // 重置當前索引
-            currentIndex = 0;
-            
-            // 清空圖表
-            if (chart1 && chart2) {
-                chart1.data.datasets.forEach(dataset => {
-                    dataset.data = [];
-                });
-                chart2.data.datasets.forEach(dataset => {
-                    dataset.data = [];
-                });
-                chart1.update();
-                chart2.update();
-            }
-            
-            // 更新進度條
-            document.getElementById('progressBar').style.width = '0%';
-            
-            // 更新狀態文字
-            if (filteredTimes.length > 0) {
-                document.getElementById('status').textContent = '準備回放';
-            } else {
-                document.getElementById('status').textContent = '所選時間區間無數據';
-            }
-        }
-        
-        // 更新圖表 - 累積顯示所有數據點
-        function updateCharts() {
-            if (!tradingData || currentIndex >= filteredTimes.length) return;
-            
-            console.log('Updating charts with cumulative data up to index:', currentIndex);
-            
-            // 檢查當前時間是否為13:00或之後（僅針對圖表二）
-            const currentTime = filteredTimes[currentIndex];
-            const currentTimeObj = new Date(currentTime);
-            const currentHour = currentTimeObj.getHours();
-            const currentMinute = currentTimeObj.getMinutes();
-            const isAfter1300 = currentHour > 13 || (currentHour === 13 && currentMinute >= 0);
-            
-            // 如果是13:00或之後，找到13:00的索引位置（僅用於圖表二）
-            let chart2StartIndex = 0;
-            if (isAfter1300) {
-                // 找到13:00的索引位置
-                for (let i = 0; i < filteredTimes.length; i++) {
-                    const timeObj = new Date(filteredTimes[i]);
-                    const hour = timeObj.getHours();
-                    const minute = timeObj.getMinutes();
-                    if (hour === 13 && minute === 0) {
-                        chart2StartIndex = i;
-                        break;
-                    } else if (hour > 13 || (hour === 13 && minute > 0)) {
-                        chart2StartIndex = i;
-                        break;
-                    }
-                }
-            }
-            
-            // 清空當前數據 - 使用安全的方式
-            chart1.data.datasets.forEach(dataset => {
-                dataset.data = [];
-            });
-            
-            chart2.data.datasets.forEach(dataset => {
-                dataset.data = [];
-            });
-            
-            // 根據當前數據源顯示/隱藏比較數據集
-            const isCompareMode = currentDataSource === 'compare';
-            
-            // 查找並設置比較數據集的可見性
-            chart1.data.datasets.forEach(dataset => {
-                if (dataset.label === '小台指數_數據源2') {
-                    dataset.hidden = !isCompareMode;
-                }
-            });
-            
-            chart2.data.datasets.forEach(dataset => {
-                if (dataset.label === '結算預估價_數據源2') {
-                    dataset.hidden = !isCompareMode;
-                }
-            });
-            
-            // 圖表一：累積顯示從開始到當前時間點的所有數據（不變動）
-            for (let i = 0; i <= currentIndex; i++) {
-                const currentTime = filteredTimes[i];
-                
-                // 確保時間戳正確轉換
-                let timePoint;
-                if (typeof currentTime === 'string') {
-                    timePoint = new Date(currentTime);
-                } else if (typeof currentTime === 'number') {
-                    timePoint = new Date(currentTime);
-                } else {
-                    timePoint = new Date();
-                }
-                
-                // 檢查時間是否有效
-                if (isNaN(timePoint.getTime())) {
-                    console.warn('Invalid time:', currentTime);
-                    continue;
-                }
-                
-                console.log(`Processing time ${i}: ${currentTime}, converted to: ${timePoint}`);
-                
-                // 更新圖表一
-                const openValue = getValueAtTime('開盤價', currentTime);
-                const highValue = getValueAtTime('今高', currentTime);
-                const lowValue = getValueAtTime('今低', currentTime);
-                const miniValue = getValueAtTime('小台指數', currentTime);
-                const spreadValue = getValueAtTime('買賣差', currentTime);
-                // 圖表一不處理加權指數
-                // const weightedValue = getValueAtTime('加權指數', currentTime);
-                
-                console.log(`Values at time ${currentTime}:`, {
-                    open: openValue,
-                    high: highValue,
-                    low: lowValue,
-                    mini: miniValue,
-                    spread: spreadValue
-                    // weighted: weightedValue // 圖表一不顯示加權指數
-                });
-                
-                // 使用標籤查找數據集並添加數據
-                const openIndex = findDatasetIndex(chart1, '開盤價');
-                const highIndex = findDatasetIndex(chart1, '今高');
-                const lowIndex = findDatasetIndex(chart1, '今低');
-                const miniIndex = findDatasetIndex(chart1, '小台指數');
-                const spreadPosIndex = findDatasetIndex(chart1, '買賣差(正值)');
-                const spreadNegIndex = findDatasetIndex(chart1, '買賣差(負值)');
-                
-                if (openValue !== null && openIndex >= 0) {
-                    chart1.data.datasets[openIndex].data.push({x: timePoint, y: openValue});
-                }
-                if (highValue !== null && highIndex >= 0) {
-                    chart1.data.datasets[highIndex].data.push({x: timePoint, y: highValue});
-                }
-                if (lowValue !== null && lowIndex >= 0) {
-                    chart1.data.datasets[lowIndex].data.push({x: timePoint, y: lowValue});
-                }
-                if (miniValue !== null && miniIndex >= 0) {
-                    chart1.data.datasets[miniIndex].data.push({x: timePoint, y: miniValue});
-                }
-                if (spreadValue !== null && openPrice !== null && spreadPosIndex >= 0 && spreadNegIndex >= 0) {
-                    // 買賣差河流圖：正值粉紅色向上，負值綠色向下，以開盤價為基準
-                    // 放大3倍顯示
-                    const amplifiedSpreadValue = spreadValue * 3;
-                    
-                    // 根據買賣差正負值決定顯示顏色
-                    if (spreadValue >= 0) {
-                        // 正值：粉紅色向上填充，綠色在基準線
-                        chart1.data.datasets[spreadPosIndex].data.push({x: timePoint, y: openPrice + amplifiedSpreadValue});
-                        chart1.data.datasets[spreadNegIndex].data.push({x: timePoint, y: openPrice});
-                    } else {
-                        // 負值：粉紅色不顯示，只有綠色從開盤價填充到負值位置
-                        chart1.data.datasets[spreadPosIndex].data.push({x: timePoint, y: null});
-                        chart1.data.datasets[spreadNegIndex].data.push({x: timePoint, y: openPrice + amplifiedSpreadValue});
-                    }
-                }
-                
-                // 比較模式：處理數據源2的小台指數
-                if (isCompareMode) {
-                    const miniValue2 = getValueAtTime('小台指數_數據源2', currentTime);
-                    const mini2Index = findDatasetIndex(chart1, '小台指數_數據源2');
-                    if (miniValue2 !== null && mini2Index >= 0) {
-                        chart1.data.datasets[mini2Index].data.push({x: timePoint, y: miniValue2});
-                    }
-                }
-                
-                // 圖表一不顯示加權指數
-                // if (weightedValue !== null) {
-                //     chart1.data.datasets[6].data.push({x: timePoint, y: weightedValue});
-                // }
-            }
-            
-            // 圖表二：根據13:00規則單獨處理
-            const chart2DisplayStartIndex = isAfter1300 ? chart2StartIndex : 0;
-            for (let i = chart2DisplayStartIndex; i <= currentIndex; i++) {
-                const currentTime = filteredTimes[i];
-                
-                // 確保時間戳正確轉換
-                let timePoint;
-                if (typeof currentTime === 'string') {
-                    timePoint = new Date(currentTime);
-                } else if (typeof currentTime === 'number') {
-                    timePoint = new Date(currentTime);
-                } else {
-                    timePoint = new Date();
-                }
-                
-                // 檢查時間是否有效
-                if (isNaN(timePoint.getTime())) {
-                    console.warn('Invalid time:', currentTime);
-                    continue;
-                }
-                
-                // 更新圖表二 - 使用標籤查找數據集
-                const settlementValue = getValueAtTime('結算價預估', currentTime);
-                const weighted2Value = getValueAtTime('加權指數', currentTime);
-                
-                const settlementIndex = findDatasetIndex(chart2, '結算價預估');
-                const weightedIndex = findDatasetIndex(chart2, '加權指數');
-                
-                if (settlementValue !== null && settlementIndex >= 0) {
-                    chart2.data.datasets[settlementIndex].data.push({x: timePoint, y: settlementValue});
-                }
-                if (weighted2Value !== null && weightedIndex >= 0) {
-                    chart2.data.datasets[weightedIndex].data.push({x: timePoint, y: weighted2Value});
-                }
-                
-                // 比較模式：處理數據源2的結算預估價
-                if (isCompareMode) {
-                    const settlementValue2 = getValueAtTime('結算預估價_數據源2', currentTime);
-                    const settlement2Index = findDatasetIndex(chart2, '結算預估價_數據源2');
-                    if (settlementValue2 !== null && settlement2Index >= 0) {
-                        chart2.data.datasets[settlement2Index].data.push({x: timePoint, y: settlementValue2});
-                    }
-                }
-            }
-            
-            // 動態設置顏色（基於最新數據點）
-            const latestTime = filteredTimes[currentIndex];
-            const latestMiniValue = getValueAtTime('小台指數', latestTime);
-            const latestSettlementValue = getValueAtTime('結算價預估', latestTime);
-            const latestWeighted2Value = getValueAtTime('加權指數', latestTime);
-            const latestSpreadValue = getValueAtTime('買賣差', latestTime);
-            
-            // 小台指數顏色現在由segment styling自動處理，不需要手動設置
-            
-            // 買賣差顏色現在由segment styling自動處理，不需要手動設置
-            
-            // 加權指數顏色現在由segment styling自動處理，不需要手動設置
-            
-            console.log('Chart1 datasets after update:', chart1.data.datasets.map(d => ({label: d.label, dataLength: d.data.length})));
-            console.log('Chart2 datasets after update:', chart2.data.datasets.map(d => ({label: d.label, dataLength: d.data.length})));
-            
-            chart1.update('none');
-            chart2.update('none');
-            
-            // 同時更新視窗中的圖表
-            if (chart1Window) {
-                // 複製主圖表的數據到視窗圖表
-                chart1Window.data.datasets.forEach((dataset, index) => {
-                    if (chart1.data.datasets[index]) {
-                        dataset.data = [...chart1.data.datasets[index].data];
-                        dataset.hidden = chart1.data.datasets[index].hidden;
-                    }
-                });
-                chart1Window.update('none');
-            }
-            
-            if (chart2Window) {
-                // 複製主圖表的數據到視窗圖表
-                chart2Window.data.datasets.forEach((dataset, index) => {
-                    if (chart2.data.datasets[index]) {
-                        dataset.data = [...chart2.data.datasets[index].data];
-                        dataset.hidden = chart2.data.datasets[index].hidden;
-                    }
-                });
-                chart2Window.update('none');
-            }
-            
-            // 更新進度條
-            const progress = (currentIndex / filteredTimes.length) * 100;
-            document.getElementById('progressBar').style.width = progress + '%';
-            
-            // 更新狀態
-            const timeStr = new Date(latestTime).toLocaleTimeString('zh-TW', {hour12: false});
-            document.getElementById('status').textContent = `回放中: ${timeStr} (${currentIndex + 1}/${filteredTimes.length})`;
-            
-            // 更新數據顯示
-            updateDataDisplay(latestTime);
-        }
-        
-        // 播放/暫停
-        function togglePlay() {
-            if (isPlaying) {
-                pauseReplay();
-            } else {
-                startReplay();
-            }
-        }
-        
-        // 開始回放
-        function startReplay() {
-            if (!tradingData || currentIndex >= filteredTimes.length) return;
-            
-            isPlaying = true;
-            document.getElementById('playBtn').textContent = '暫停';
-            
-            const speed = parseInt(document.getElementById('speedSlider').value);
-            const interval = Math.max(50, 500 / speed); // 最小50ms間隔
-            
-            playInterval = setInterval(() => {
-                updateCharts();
-                currentIndex++;
-                
-                if (currentIndex >= filteredTimes.length) {
-                    pauseReplay();
-                    document.getElementById('status').textContent = '回放完成';
-                }
-            }, interval);
-        }
-        
-        // 暫停回放
-        function pauseReplay() {
-            isPlaying = false;
-            document.getElementById('playBtn').textContent = '播放';
-            if (playInterval) {
-                clearInterval(playInterval);
-                playInterval = null;
-            }
-        }
-        
-        // 重置回放
-        function resetReplay() {
-            pauseReplay();
-            currentIndex = 0;
-            
-            if (chart1) {
-                chart1.data.datasets.forEach(dataset => {
-                    dataset.data = [];
-                });
-                chart1.update();
-            }
-            
-            if (chart2) {
-                chart2.data.datasets.forEach(dataset => {
-                    dataset.data = [];
-                });
-                chart2.update();
-            }
-            
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('status').textContent = tradingData ? '準備回放' : '請載入JSON數據文件';
-            updateDataDisplay(null);
-        }
-        
-        // 更新數據顯示
-        function updateDataDisplay(currentTime) {
-            if (!currentTime || !tradingData) {
-                // 清空顯示
-                return;
-            }
-            
-            // 獲取當前時間點的數據
-            const openValue = getValueAtTime('開盤價', currentTime);
-            const highValue = getValueAtTime('今高', currentTime);
-            const lowValue = getValueAtTime('今低', currentTime);
-            const miniValue = getValueAtTime('小台指數', currentTime);
-            const spreadValue = getValueAtTime('買賣差', currentTime);
-            const weightedValue = getValueAtTime('加權指數', currentTime);
-            const settlementValue = getValueAtTime('結算價預估', currentTime);
-            
-            // 這裡可以添加數據顯示邏輯，例如更新某個顯示面板
-            // 目前暫時留空，因為主要的數據顯示是通過圖表完成的
-        }
-        
-        // 速度控制
-        document.getElementById('speedSlider').addEventListener('input', function() {
-            const speed = this.value;
-            document.getElementById('speedValue').textContent = speed + 'x';
-            
-            if (isPlaying) {
-                pauseReplay();
-                startReplay();
-            }
-        });
-        
-        // 異常值過濾閾值控制
-        document.getElementById('outlierThreshold').addEventListener('input', function() {
-            const threshold = this.value;
-            document.getElementById('thresholdValue').textContent = threshold + '點';
-        });
-        
-        // 異常值過濾開關控制
-        document.getElementById('enableOutlierFilter').addEventListener('change', function() {
-            if (tradingData) {
-                processData(); // 重新處理數據
-            }
-        });
-        
-        // 時間區間控制
-        document.getElementById('timeInterval').addEventListener('change', function() {
-            console.log('Time interval changed to:', this.value);
-            if (tradingData) {
-                filterTimesByInterval();
-            } else {
-                console.log('No trading data loaded yet');
-            }
-        });
-        
-
-        
-        // 手動進度控制
-        function setupProgressControl() {
-            const progressContainer = document.querySelector('.progress');
-            const progressBar = document.getElementById('progressBar');
-            
-            let isDragging = false;
-            
-            // 點擊進度條跳轉
-            progressContainer.addEventListener('click', function(e) {
-                if (!tradingData || filteredTimes.length === 0) return;
-                
-                const rect = progressContainer.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const progressPercent = clickX / rect.width;
-                const newIndex = Math.floor(progressPercent * filteredTimes.length);
-                
-                currentIndex = Math.max(0, Math.min(newIndex, filteredTimes.length - 1));
-                updateCharts();
-            });
-            
-            // 拖拽功能
-            progressContainer.addEventListener('mousedown', function(e) {
-                if (!tradingData || filteredTimes.length === 0) return;
-                
-                isDragging = true;
-                const wasPlaying = isPlaying;
-                if (wasPlaying) pauseReplay();
-                
-                function handleMouseMove(e) {
-                    if (!isDragging) return;
-                    
-                    const rect = progressContainer.getBoundingClientRect();
-                    const dragX = e.clientX - rect.left;
-                    const progressPercent = Math.max(0, Math.min(1, dragX / rect.width));
-                    const newIndex = Math.floor(progressPercent * filteredTimes.length);
-                    
-                    currentIndex = Math.max(0, Math.min(newIndex, filteredTimes.length - 1));
-                    updateCharts();
-                }
-                
-                function handleMouseUp() {
-                    isDragging = false;
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                }
-                
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-            });
-            
-            // 添加進度條樣式
-            progressContainer.style.cursor = 'pointer';
-        }
-        
-        // 窗口大小變化時重新調整圖表
-        function handleResize() {
-            // 只調整當前顯示的圖表
-            const activeTabContent = document.querySelector('.tab-content.active');
-            if (activeTabContent) {
-                const tabIndex = activeTabContent.id === 'tab-0' ? 0 : 1;
-                setTimeout(() => {
-                    if (tabIndex === 0 && chart1) {
-                        chart1.resize();
-                    } else if (tabIndex === 1 && chart2) {
-                        chart2.resize();
-                    }
-                }, 100);
-            }
-        }
-        
-        // 初始化
-        window.addEventListener('load', function() {
-            initCharts();
-            setupProgressControl();
-        });
-        
-        // 監聽窗口大小變化
-        window.addEventListener('resize', handleResize);
     </script>
 </body>
 </html>
+
