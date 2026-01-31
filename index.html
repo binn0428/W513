@@ -3,1079 +3,2183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>資料查詢</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            background-image: url('back.jpg'); /* 設定背景圖 */
-            background-size: cover; /* 背景圖覆蓋整個畫面 */
-            background-position: center; /* 背景圖置中 */
-        }
-        .container {
-            display: flex;
-            flex-direction: column; /* 垂直排列 */
-            align-items: center; /* 置中對齊 */
-        }
-        button {
-            margin: 10px 0;
-            padding: 10px 20px;
-            font-size: 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            box-shadow: 0 6px #999;
-            transition: all 0.3s ease;
-            position: relative;
-            top: 0;
-            background: linear-gradient(to bottom, #4169E1, #0000CD);
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-        }
-        button:hover {
-            background: linear-gradient(to bottom, #4169E1, #1E90FF);
-        }
-        button:active {
-            top: 5px;
-            box-shadow: 0 1px #666;
-            background: linear-gradient(to bottom, #0000CD, #4169E1);
-        }
-        .option {
-            width: 100px;
-            height: 100px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #000;
-            margin: 5px;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 6px #999;
-            transition: all 0.3s ease;
-            position: relative;
-            top: 0;
-            background: linear-gradient(to bottom, #90EE90, #32CD32);
-        }
-        .option:hover {
-            background: linear-gradient(to bottom, #90EE90, #1E90FF);
-        }
-        .option:active {
-            top: 5px;
-            box-shadow: 0 1px #666;
-            background: linear-gradient(to bottom, #32CD32, #90EE90);
-        }
-    </style>
+    <title>資料查詢系統</title>
+    
+    <!-- PWA & Favicon -->
+    <link rel="icon" type="image/webp" href="faq-002.webp">
+    <link rel="manifest" href="manifest.json">
     <script>
-        function openNewPage(group, buttonNames, imagePaths) {
-            const newWindow = window.open("", "_blank");
-            newWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="zh-Hant">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>${group} 選項</title>
-                    <style>
-                        body {
-                            display: flex;
-                            flex-wrap: wrap;
-                            justify-content: center;
-                            align-items: center;
-                            min-height: 100vh;
-                            margin: 0;
-                            padding: 20px;
-                            font-family: Arial, sans-serif;
-                            box-sizing: border-box;
-                        }
-                        .option {
-                            width: 100px;
-                            height: 100px;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            border: 1px solid #000;
-                            margin: 5px;
-                            font-size: 18px;
-                            cursor: pointer;
-                            background-color: rgba(57, 255, 20, 0.8);
-                            color: black;
-                            transition: all 0.3s ease;
-                            box-shadow: 0 5px #666;
-                            outline: none;
-                        }
-                        .option:hover {
-                            background-color: rgba(57, 255, 20, 1);
-                        }
-                        /* 新增圖片顯示視窗的樣式 */
-                        .image-window {
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: white;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            z-index: 1000;
-                        }
-                        .image-window img {
-                            max-width: 100%;
-                            max-height: 100%;
-                            object-fit: contain;
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${Array.from({ length: buttonNames.length }, (_, i) => `
-                        <div class="option" onclick="window.open('${imagePaths[i]}', '_blank', 'width=800,height=600').document.write('<html><head><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:white;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src=\\'${imagePaths[i]}\\' /></body></html>')">
-                            ${buttonNames[i]}
-                        </div>
-                    `).join('')}
-                </body>
-                </html>
-            `);
-            newWindow.document.close();
-        }
-
-        function searchImages() {
-            const input = document.getElementById('searchInput').value.toLowerCase().trim(); // 去除前後空白
-            if (input === "") {
-                alert('請輸入搜尋內容'); // 提示用戶輸入內容
-                return; // 退出函數
-            }
-            const images = [
-             
-            ];
-            const filteredImages = images.filter(image => image.toLowerCase().includes(input));
-            if (filteredImages.length > 0) {
-                const newWindow = window.open("", "_blank");
-                newWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html lang="zh-Hant">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>搜尋結果</title>
-                        <style>
-                            body {
-                                margin: 0;
-                                padding: 0;
-                                min-height: 100vh;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                background: #f0f0f0;
-                            }
-                            .back-button {
-                                position: fixed;
-                                top: 20px;
-                                left: 20px;
-                                padding: 10px 20px;
-                                background: #007bff;
-                                color: white;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                z-index: 1000;
-                            }
-                            .back-button:hover {
-                                background: #0056b3;
-                            }
-                            .image-container {
-                                width: 100%;
-                                max-width: 100vw;
-                                padding: 20px;
-                                box-sizing: border-box;
-                            }
-                            img {
-                                width: 100%;
-                                height: auto;
-                                max-height: 90vh;
-                                object-fit: contain;
-                                display: block;
-                                margin: 10px auto;
-                                background: white;
-                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <button class="back-button" onclick="window.close()">返回上一頁</button>
-                        <div class="image-container">
-                            ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
-                        </div>
-                    </body>
-                    </html>
-                `);
-                newWindow.document.close();
-            } else {
-                alert('未找到符合的圖片');
-            }
-        }
-
-        // 頁面載入時自動讀取分機資料和調度資料
-        let telData = null;
-        let dispatchData = null;
-
-        // 添加載入狀態指示器
-        function showLoadingStatus(message) {
-            removeLoadingStatus();
-            const statusDiv = document.createElement('div');
-            statusDiv.id = 'loadingStatus';
-            statusDiv.style.position = 'fixed';
-            statusDiv.style.top = '50%';
-            statusDiv.style.left = '50%';
-            statusDiv.style.transform = 'translate(-50%, -50%)';
-            statusDiv.style.padding = '15px 30px';
-            statusDiv.style.background = message.includes('完成') ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 0, 0, 0.8)';
-            statusDiv.style.color = 'white';
-            statusDiv.style.borderRadius = '4px';
-            statusDiv.style.zIndex = '1000';
-            statusDiv.style.fontSize = '16px';
-            statusDiv.style.fontWeight = 'bold';
-            statusDiv.style.transition = 'opacity 0.3s ease';
-            statusDiv.textContent = message;
-            document.body.appendChild(statusDiv);
-        }
-
-        function removeLoadingStatus() {
-            const statusDiv = document.getElementById('loadingStatus');
-            if (statusDiv && statusDiv.parentNode) {
-                statusDiv.parentNode.removeChild(statusDiv);
-            }
-        }
-
-        // 資料載入函數
-        async function loadData() {
-            try {
-                showLoadingStatus('正在載入資料...');
-                
-                // 同時載入兩個檔案
-                const [telResponse, dispatchResponse] = await Promise.all([
-                    fetch('./tel/電話資料.xlsx'),
-                    fetch('./tel/調度資料.xlsx')
-                ]);
-
-                // 檢查回應狀態
-                if (!telResponse.ok) throw new Error('電話資料載入失敗');
-                if (!dispatchResponse.ok) throw new Error('調度資料載入失敗');
-
-                // 轉換為 ArrayBuffer
-                const [telBuffer, dispatchBuffer] = await Promise.all([
-                    telResponse.arrayBuffer(),
-                    dispatchResponse.arrayBuffer()
-                ]);
-
-                // 處理電話資料
-                const telWorkbook = XLSX.read(telBuffer, { type: 'array' });
-                telData = XLSX.utils.sheet_to_json(telWorkbook.Sheets[telWorkbook.SheetNames[0]]);
-
-                // 處理調度資料
-                const dispatchWorkbook = XLSX.read(dispatchBuffer, { type: 'array' });
-                dispatchData = XLSX.utils.sheet_to_json(dispatchWorkbook.Sheets[dispatchWorkbook.SheetNames[0]]);
-
-                // 將調度資料的數字轉換為字串格式
-                dispatchData = dispatchData.map(item => {
-                    if (item['分機號碼'] !== undefined) {
-                        item['分機號碼'] = item['分機號碼'].toString();
-                    }
-                    return item;
-                });
-
-                // 啟用搜尋按鈕
-                document.querySelectorAll('button').forEach(button => {
-                    button.disabled = false;
-                });
-
-                // 顯示成功訊息
-                showLoadingStatus('資料載入完成！');
-                
-                // 縮短顯示時間到 500 毫秒
-                await new Promise(resolve => setTimeout(resolve, 200));
-                removeLoadingStatus();
-
-            } catch (error) {
-                console.error('資料載入錯誤:', error);
-                showLoadingStatus('資料載入失敗，請重新整理頁面');
-                
-                // 縮短錯誤訊息顯示時間到 1000 毫秒
-                await new Promise(resolve => setTimeout(resolve, 500));
-                removeLoadingStatus();
-            }
-        }
-
-        // 頁面載入時執行
-        window.addEventListener('DOMContentLoaded', () => {
-            // 初始時禁用搜尋按鈕
-            document.querySelectorAll('button').forEach(button => {
-                button.disabled = true;
-            });
-            
-            // 載入資料
-            loadData();
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker registration failed: ', err));
         });
-
-        function highlightText(text, searchTerm) {
-            if (!text || !searchTerm) return text;
-            const searchTermLower = searchTerm.toLowerCase();
-            const textLower = text.toString().toLowerCase();
-            if (!textLower.includes(searchTermLower)) return text;
-            
-            const startIndex = textLower.indexOf(searchTermLower);
-            const endIndex = startIndex + searchTerm.length;
-            const originalMatchedText = text.toString().substring(startIndex, endIndex);
-            
-            return text.toString().replace(
-                originalMatchedText,
-                `<span class="highlight">${originalMatchedText}</span>`
-            );
-        }
-
-        function searchTel() {
-            const input = document.getElementById('telSearchInput').value.trim();
-            if (input === "") {
-                alert('請輸入搜尋內容');
-                return;
-            }
-
-            const results = telData.filter(item => {
-                return Object.values(item).some(value => {
-                    if (value === null || value === undefined) return false;
-                    return value.toString().toLowerCase().includes(input.toLowerCase());
-                });
-            });
-
-            if (results.length > 0) {
-                // 準備所有結果的 Telegram 訊息內容
-                let telegramMessage = '分機搜尋結果:\n';
-                results.forEach((result, index) => {
-                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
-                    telegramMessage += `分機號碼: ${result['分機號碼'] || result['分機'] || result['Tel'] || '無資料'}\n`;
-                    telegramMessage += `使用單位: ${result['使用單位'] || result['單位'] || result['部門'] || '無資料'}\n`;
-                    telegramMessage += `線組編號: ${result['線組編號'] || '無資料'}\n`;
-                    telegramMessage += `G450 Port: ${result['G450 Port'] || '無資料'}\n`;
-                    telegramMessage += `分機種類: ${result['分機種類'] || '無資料'}\n`;
-                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
-                    telegramMessage += `DID號碼: ${result['對應DID號碼'] || '無資料'}\n`;
-                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
-                    telegramMessage += `拆遷紀錄: ${result['拆遷記錄'] || '無資料'}\n`;
-                    telegramMessage += `備註: ${result['備註'] || '無資料'}\n`;
-                });
-
-                // 發送到 Telegram
-                const botToken = '5615970654:AAEiOd-m4fmQkps70wkZlvcwLvguk12FLNk';
-                const chatId = '-677659610';
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: telegramMessage
-                    })
-                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
-
-                // 如果結果超過2筆，顯示分類視窗
-                if (results.length > 2) {
-                    // 根據匹配欄位分類
-                    const groupedResults = {};
-                    const fields = ['分機號碼', '使用單位', '線組編號', 'G450 Port', '分機種類', '副機數量', 'DID號碼', '裝機位置', '拆遷紀錄', '備註'];
-                    
-                    results.forEach(result => {
-                        fields.forEach(field => {
-                            const value = result[field];
-                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                                if (!groupedResults[field]) {
-                                    groupedResults[field] = [];
-                                }
-                                if (!groupedResults[field].includes(result)) {
-                                    groupedResults[field].push(result);
-                                }
-                            }
-                        });
-                    });
-
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>分機搜尋結果分類</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f0f0f0;
-                                }
-                                .category-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                }
-                                .category-card {
-                                    background-color: #fff;
-                                    padding: 15px;
-                                    margin-bottom: 15px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                    cursor: pointer;
-                                    transition: background-color 0.3s;
-                                }
-                                .category-card:hover {
-                                    background-color: #f5f5f5;
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    color: #333;
-                                    font-size: 1.2em;
-                                }
-                                .result-details {
-                                    display: none;
-                                    margin-top: 10px;
-                                    padding: 10px;
-                                    background-color: #f9f9f9;
-                                    border-radius: 5px;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #333;
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #666;
-                                }
-                                .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="category-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                                </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
-                                        <div class="result-details">
-                                            ${items.map((result, index) => `
-                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                    <div class="result-item">
-                                                        <span class="label">分機號碼：</span>
-                                                        <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">使用單位：</span>
-                                                        <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號：</span>
-                                                        <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">G450 Port：</span>
-                                                        <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">分機種類：</span>
-                                                        <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">副機數量：</span>
-                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">DID號碼：</span>
-                                                        <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">裝機位置：</span>
-                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">拆遷紀錄：</span>
-                                                        <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">備註：</span>
-                                                        <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
-                } else {
-                    // 如果結果少於或等於2筆，直接顯示詳細資訊
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>分機搜尋結果</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f0f0f0;
-                                }
-                                .results-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                }
-                                .result-card {
-                                    background-color: #fff;
-                                    padding: 20px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                    margin-bottom: 20px;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #333;
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #666;
-                                }
-                                .result-header {
-                                    background-color: #4169E1;
-                                    color: white;
-                                    padding: 10px;
-                                    border-radius: 5px 5px 0 0;
-                                    margin-bottom: 10px;
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    color: #333;
-                                    font-size: 1.2em;
-                                }
-                                .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="results-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                                </div>
-                                ${results.map((result, index) => `
-                                    <div class="result-card">
-                                        <div class="result-header">搜尋結果 #${index + 1}</div>
-                                        <div class="result-item">
-                                            <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || result['分機'] || result['Tel'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || result['單位'] || result['部門'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號：</span>
-                                            <span class="value">${highlightText(result['線組編號'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">G450 Port：</span>
-                                            <span class="value">${highlightText(result['G450 Port'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">分機種類：</span>
-                                            <span class="value">${highlightText(result['分機種類'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">DID號碼：</span>
-                                            <span class="value">${highlightText(result['對應DID號碼'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">拆遷紀錄：</span>
-                                            <span class="value">${highlightText(result['拆遷記錄'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">備註：</span>
-                                            <span class="value">${highlightText(result['備註'] || '無資料', input)}</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
-                }
-            } else {
-                alert('未找到符合的分機資料');
-            }
-        }
-
-        function searchDispatch() {
-            const input = document.getElementById('dispatchSearchInput').value.trim();
-            if (input === "") {
-                alert('請輸入搜尋內容');
-                return;
-            }
-
-            if (!dispatchData || dispatchData.length === 0) {
-                alert('調度資料尚未載入完成，請稍後再試');
-                return;
-            }
-
-            const results = dispatchData.filter(item => {
-                return Object.values(item).some(value => {
-                    if (value === null || value === undefined) return false;
-                    return value.toString().toLowerCase().includes(input.toLowerCase());
-                });
-            });
-
-            if (results.length > 0) {
-                // 準備所有結果的 Telegram 訊息內容
-                let telegramMessage = '調度電話搜尋結果:\n';
-                results.forEach((result, index) => {
-                    telegramMessage += `\n--- 結果 ${index + 1} ---\n`;
-                    telegramMessage += `分機號碼: ${result['分機號碼'] || '無資料'}\n`;
-                    telegramMessage += `C端子位置: ${result['C端子位置'] || '無資料'}\n`;
-                    telegramMessage += `LENS: ${result['LENS'] || '無資料'}\n`;
-                    telegramMessage += `線組編號(機房): ${result['線組編號(機房)'] || '無資料'}\n`;
-                    telegramMessage += `線組編號(現場): ${result['線組編號(現場)'] || '無資料'}\n`;
-                    telegramMessage += `使用單位: ${result['使用單位'] || '無資料'}\n`;
-                    telegramMessage += `裝機位置: ${result['裝機位置'] || '無資料'}\n`;
-                    telegramMessage += `副機數量: ${result['副機數量'] || '無資料'}\n`;
-                    telegramMessage += `連絡電話: ${result['連絡電話'] || '無資料'}\n`;
-                });
-
-                // 發送到 Telegram
-                const botToken = '5615970654:AAEiOd-m4fmQkps70wkZlvcwLvguk12FLNk';
-                const chatId = '-677659610';
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: telegramMessage
-                    })
-                }).catch(error => console.error('發送 Telegram 訊息失敗:', error));
-
-                // 如果結果超過2筆，顯示分類視窗
-                if (results.length > 2) {
-                    // 根據匹配欄位分類
-                    const groupedResults = {};
-                    const fields = ['分機號碼', 'C端子位置', 'LENS', '線組編號(機房)', '線組編號(現場)', '使用單位', '裝機位置', '副機數量', '連絡電話'];
-                    
-                    results.forEach(result => {
-                        fields.forEach(field => {
-                            const value = result[field];
-                            if (value && value.toString().toLowerCase().includes(input.toLowerCase())) {
-                                if (!groupedResults[field]) {
-                                    groupedResults[field] = [];
-                                }
-                                if (!groupedResults[field].includes(result)) {
-                                    groupedResults[field].push(result);
-                                }
-                            }
-                        });
-                    });
-
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>調度電話搜尋結果分類</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f0f0f0;
-                                }
-                                .category-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                }
-                                .category-card {
-                                    background-color: #fff;
-                                    padding: 15px;
-                                    margin-bottom: 15px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                    cursor: pointer;
-                                    transition: background-color 0.3s;
-                                }
-                                .category-card:hover {
-                                    background-color: #f5f5f5;
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    color: #333;
-                                    font-size: 1.2em;
-                                }
-                                .result-details {
-                                    display: none;
-                                    margin-top: 10px;
-                                    padding: 10px;
-                                    background-color: #f9f9f9;
-                                    border-radius: 5px;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #333;
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #666;
-                                }
-                                .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="category-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                                </div>
-                                ${Object.entries(groupedResults).map(([field, items]) => `
-                                    <div class="category-card" onclick="this.querySelector('.result-details').style.display = this.querySelector('.result-details').style.display === 'none' ? 'block' : 'none'">
-                                        <h3>符合「${field}」欄位 (${items.length} 筆結果)</h3>
-                                        <div class="result-details">
-                                            ${items.map((result, index) => `
-                                                <div style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 5px;">
-                                                    <div class="result-item">
-                                                        <span class="label">分機號碼：</span>
-                                                        <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">C端子位置：</span>
-                                                        <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">LENS：</span>
-                                                        <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號(機房)：</span>
-                                                        <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">線組編號(現場)：</span>
-                                                        <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">使用單位：</span>
-                                                        <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">裝機位置：</span>
-                                                        <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">副機數量：</span>
-                                                        <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                                    </div>
-                                                    <div class="result-item">
-                                                        <span class="label">連絡電話：</span>
-                                                        <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
-                } else {
-                    // 如果結果少於或等於2筆，直接顯示詳細資訊
-                    const resultWindow = window.open("", "_blank");
-                    resultWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-Hant">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>調度電話搜尋結果</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    margin: 0;
-                                    padding: 20px;
-                                    background-color: #f0f0f0;
-                                }
-                                .results-container {
-                                    max-width: 800px;
-                                    margin: 0 auto;
-                                }
-                                .result-card {
-                                    background-color: #fff;
-                                    padding: 20px;
-                                    border-radius: 5px;
-                                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                    margin-bottom: 20px;
-                                }
-                                .result-item {
-                                    display: flex;
-                                    padding: 8px 0;
-                                    border-bottom: 1px solid #eee;
-                                }
-                                .label {
-                                    font-weight: bold;
-                                    width: 120px;
-                                    color: #333;
-                                }
-                                .value {
-                                    flex-grow: 1;
-                                    color: #666;
-                                }
-                                .result-header {
-                                    background-color: #4169E1;
-                                    color: white;
-                                    padding: 10px;
-                                    border-radius: 5px 5px 0 0;
-                                    margin-bottom: 10px;
-                                }
-                                .search-summary {
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    color: #333;
-                                    font-size: 1.2em;
-                                }
-                                .highlight {
-                                    background-color: #ffeb3b;
-                                    padding: 2px 4px;
-                                    border-radius: 2px;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="results-container">
-                                <div class="search-summary">
-                                    搜尋條件: "${input}" (共找到 ${results.length} 筆結果)
-                                </div>
-                                ${results.map((result, index) => `
-                                    <div class="result-card">
-                                        <div class="result-header">搜尋結果 #${index + 1}</div>
-                                        <div class="result-item">
-                                            <span class="label">分機號碼：</span>
-                                            <span class="value">${highlightText(result['分機號碼'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">C端子位置：</span>
-                                            <span class="value">${highlightText(result['C端子位置'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">LENS：</span>
-                                            <span class="value">${highlightText(result['LENS'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號(機房)：</span>
-                                            <span class="value">${highlightText(result['線組編號(機房)'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">線組編號(現場)：</span>
-                                            <span class="value">${highlightText(result['線組編號(現場)'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">使用單位：</span>
-                                            <span class="value">${highlightText(result['使用單位'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">裝機位置：</span>
-                                            <span class="value">${highlightText(result['裝機位置'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">副機數量：</span>
-                                            <span class="value">${highlightText(result['副機數量'] || '無資料', input)}</span>
-                                        </div>
-                                        <div class="result-item">
-                                            <span class="label">連絡電話：</span>
-                                            <span class="value">${highlightText(result['連絡電話'] || '無資料', input)}</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                        </html>
-                    `);
-                    resultWindow.document.close();
-                }
-            } else {
-                alert('未找到符合的調度電話資料');
-            }
-        }
-
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault(); // 禁止右鍵菜單
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-                e.preventDefault(); // 禁止 F12 和 Ctrl+Shift+I
-            }
-        });
+      }
     </script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- XLSX for Import/Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2canvas for Screenshot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <!-- DOCX Preview & Dependencies (Client-side conversion) -->
+    <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+    <script src="https://unpkg.com/docx-preview/dist/docx-preview.min.js"></script>
+    <!-- html2pdf.js for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-color: #3f51b5;
+            --accent-hover: #5c6bc0;
+            --border-color: #333;
+            --input-bg: #2c2c2c;
+            --card-bg: #252525;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            min-height: 100vh;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 10px auto;
+            padding: 15px;
+            background: rgba(30, 30, 30, 0.95);
+            min-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 15px; }
+        h2 { font-size: 1.3rem; margin-bottom: 12px; }
+        h3 { font-size: 1.1rem; margin-bottom: 10px; }
+        h1, h2, h3 { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+        /* Login Overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .login-box {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            position: relative;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--text-secondary);
+            transition: color 0.3s;
+        }
+        .close-btn:hover { color: #fff; }
+
+        /* Inputs & Controls */
+        input, select {
+            padding: 8px 12px;
+            margin: 5px 0;
+            font-size: 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            width: calc(100% - 24px); /* Adjust for padding */
+            transition: all 0.3s ease;
+        }
+        
+        /* Adjust width for specific inputs if needed */
+        .toolbar input { width: 100%; max-width: 300px; min-width: auto; }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.3);
+        }
+
+        /* Buttons with Animation */
+        button {
+            cursor: pointer;
+            padding: 8px 16px;
+            margin: 4px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(0,0,0,0.3);
+            filter: brightness(1.1);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* Button Ripple Effect */
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+        button:active::after { width: 200px; height: 200px; }
+
+        /* Utility Classes */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+        .editing-cell { background-color: #fffde7; border: 2px solid #ff9800; }
+        
+        /* Tabs */
+        .tabs { 
+            display: flex; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid var(--border-color);
+            gap: 10px;
+        }
+        .tab { 
+            padding: 12px 25px; 
+            cursor: pointer; 
+            background: var(--bg-primary); 
+            border-radius: 8px 8px 0 0; 
+            color: var(--text-secondary);
+            transition: all 0.3s;
+            position: relative;
+            border: 1px solid transparent;
+        }
+        .tab:hover { background: #252525; color: #fff; }
+        .tab.active { 
+            background: var(--accent-color); 
+            color: white; 
+            font-weight: bold;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Tables */
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0;
+            margin-top: 15px; 
+            background: var(--card-bg); 
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        th, td { 
+            border-bottom: 1px solid var(--border-color); 
+            padding: 12px 15px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #2a2a2a; 
+            color: #fff; 
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #2f2f2f; }
+        tr:hover { background-color: #383838; transition: background 0.2s; }
+        
+        /* Editable cells */
+        td[contenteditable="true"]:hover {
+            background-color: #404040;
+            cursor: text;
+            outline: 1px dashed #666;
+        }
+
+        /* Grid for Images */
+        .image-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 20px; 
+            margin-top: 20px; 
+        }
+        .image-item { 
+            border: 1px solid var(--border-color); 
+            padding: 10px; 
+            background: var(--card-bg); 
+            text-align: center; 
+            cursor: pointer; 
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .image-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            border-color: var(--accent-color);
+        }
+        .image-item img { 
+            width: 100%; 
+            height: 160px; 
+            object-fit: cover; 
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .toolbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--bg-primary); 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #777; }
+
+        /* Clear Button Style */
+        .btn-clear {
+            background: #d32f2f !important; /* Red background */
+            color: white;
+            padding: 8px 16px !important;
+            font-size: 14px;
+            margin: 4px !important;
+            border-radius: 6px;
+            /* Remove circular styles */
+            width: auto;
+            height: auto;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                padding: 10px;
+                border-radius: 0;
+                min-height: 100vh;
+                border: none;
+            }
+            
+            /* Smaller Header Fonts */
+            h1 { font-size: 0.9rem !important; margin-bottom: 5px; }
+            #loginBtn, #userControls button { font-size: 0.75rem !important; padding: 4px 8px !important; }
+            
+            /* Reduce instruction text size */
+            h2, h3, .toolbar input, .toolbar button, .image-grid, table { 
+                font-size: 0.9rem !important; 
+            }
+            
+            /* Row Layout for Toolbar */
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                padding: 10px;
+            }
+
+            /* Search Group Container */
+            .search-group {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                gap: 5px;
+            }
+
+            .toolbar input {
+                width: auto !important;
+                flex: 1; /* Take available space */
+                margin-bottom: 0 !important;
+                min-width: 0; /* Allow shrinking */
+            }
+
+            .toolbar button {
+                width: auto;
+                margin: 0 !important;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+            
+            /* Remove circular clear button overrides for mobile */
+
+            .toolbar > div:not(.search-group) {
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: flex-end; /* Align auth controls to right or distribute */
+                gap: 5px;
+            }
+
+            #phonesTableContainer, #dispatchTableContainer {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-top: 10px;
+            }
+
+            table {
+                min-width: 800px; /* Ensure content isn't squashed */
+            }
+
+            .tabs {
+                gap: 5px;
+                margin-bottom: 15px;
+            }
+
+            .tab {
+                padding: 8px 5px;
+                font-size: 0.85rem;
+                flex: 1;
+                text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+            }
+            
+            .image-item img {
+                height: 120px;
+            }
+        }
+
+        /* Card Layout for Search Results */
+        .result-card {
+            background: #fff;
+            color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            /* Adjust width to fit content but max out at screen width */
+            display: inline-block;
+            width: 100%; /* Default to full width for consistency */
+            max-width: 100%;
+            vertical-align: top;
+        }
+
+        /* Responsive adjustment: Allow card to shrink if needed, or stay full width */
+        @media (min-width: 769px) {
+            .result-card {
+                 width: fit-content;
+                 min-width: 300px;
+                 max-width: 100%;
+                 display: block; /* Stack them */
+            }
+        }
+        
+        /* Mobile: full width is usually best, but user asked for "fit width" */
+        /* If we use fit-content on mobile, and data is short, it looks weird if left aligned. */
+        /* Let's try to follow user instruction strictly: "不無條件填滿" */
+        
+        .result-card {
+            width: fit-content;
+            min-width: 300px; /* Prevent too narrow */
+            max-width: 100%;
+            display: block; /* Keep them stacked */
+        }
+        
+        .card-header {
+            background: #3f51b5; /* Matches accent color */
+            color: #fff;
+            padding: 10px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-body {
+            padding: 0;
+        }
+        
+        .info-row {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            padding: 12px 15px;
+            align-items: center;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            width: 120px; /* Fixed width for labels */
+            font-weight: bold;
+            color: #555;
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+        
+        .info-value {
+            flex-grow: 1;
+            color: #222;
+            font-size: 1rem;
+            word-break: break-word;
+        }
+
+        .info-value[contenteditable="true"] {
+            border: 1px dashed #999;
+            padding: 4px;
+            background: #fffde7;
+            min-height: 20px;
+        }
+        
+        .hidden-empty-row {
+            display: none !important;
+        }
+        
+        .highlight-bg {
+            background-color: #ffeb3b; /* Yellow highlight */
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .card-actions {
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border-top: 1px solid #eee;
+            text-align: right;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Dark mode adjustments for cards if needed, but screenshot shows white cards */
+        /* Keeping white cards as requested/shown in screenshot */
+
+    </style>
 </head>
 <body>
-    <div class="container">
-        <input type="text" id="searchInput" placeholder="搜尋圖片..." style="font-size: 20px; width: 300px;" />
-        <button onclick="searchImages()" style="background: linear-gradient(to bottom, #32CD32, #228B22); color: yellow; font-weight: bold; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);">天車與PA資料搜尋</button>
-        <!-- 新增分機搜尋區域 -->
-        <input type="text" id="telSearchInput" placeholder="搜尋分機..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
-        <button onclick="searchTel()" style="background: linear-gradient(to bottom, #FF6B6B, #CD5C5C); color: white; font-weight: bold;">分機資料搜尋</button>
 
-        <!-- 新增調度電話搜尋區域 -->
-        <input type="text" id="dispatchSearchInput" placeholder="搜尋調度電話..." style="font-size: 20px; width: 300px; margin-top: 10px;" />
-        <button onclick="searchDispatch()" style="background: linear-gradient(to bottom, #4169E1, #000080); color: white; font-weight: bold;">調度電話搜尋</button>
+<!-- Login Overlay (Initially Hidden) -->
+<div id="loginOverlay" class="login-overlay hidden">
+    <div class="login-box">
+        <span class="close-btn" onclick="hideLoginModal()">X</span>
+        <h2>請登入</h2>
+        <input type="text" id="username" placeholder="帳號">
+        <input type="password" id="password" placeholder="密碼">
+        <br>
+        <button onclick="handleLogin()">登入</button>
+        <p id="loginError" style="color: red; display: none;">帳號或密碼錯誤</p>
     </div>
-    <script>
-        function searchImages() {
-            const input = document.getElementById('searchInput').value.toLowerCase().trim(); // 去除前後空白
-            if (input === "") {
-                alert('請輸入搜尋內容'); // 提示用戶輸入內容
-                return; // 退出函數
+</div>
+
+<div class="container" id="mainApp">
+    <div id="globalError" style="display:none; background: #ffebee; color: #c62828; padding: 10px; margin-bottom: 10px; border: 1px solid #ef9a9a; border-radius: 4px;"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>資料查詢系統</h1>
+        <div>
+            <!-- Login Button (Visible when logged out) -->
+            <button id="loginBtn" onclick="showLoginModal()">登入修改</button>
+            
+            <!-- User Info & Logout (Visible when logged in) -->
+            <span id="userControls" class="hidden">
+                <span id="userInfo"></span>
+                <button onclick="logout()" style="background: #CD5C5C;">登出</button>
+            </span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('images', this)">圖片資料</div>
+        <div class="tab" onclick="switchTab('phones', this)">分機資料</div>
+        <div class="tab" onclick="switchTab('dispatch', this)">調度電話</div>
+        <div class="tab" onclick="switchTab('wordConvert', this)">Word轉圖檔</div>
+    </div>
+
+    <!-- Images Section -->
+    <div id="imagesSection" class="section">
+        <div class="toolbar">
+            <div class="search-group">
+                <input type="text" id="imgSearch" placeholder="搜尋圖片..." style="width: 300px;">
+                <button onclick="searchImages()">搜尋</button>
+                <button onclick="searchLatestImages()" style="background-color: #008CBA;">最新圖片</button>
+                <button class="btn-clear" onclick="clearInput('imgSearch')">清除</button>
+            </div>
+            
+            <!-- Auth Only Controls -->
+            <div id="imgAuthControls" class="hidden">
+                <button onclick="document.getElementById('imgUploadInput').click()" style="background: #228B22;">+ 上傳圖片</button>
+                <input type="file" id="imgUploadInput" multiple accept="image/*,.xls,.xlsx,.pdf" style="display: none;" onchange="handleImageUpload(this)">
+                <div style="font-size: 12px; color: #aaa; margin-top: 5px;">* 支援 Excel 表格與 PDF 文件 (Word/PPT 請先轉存 PDF)</div>
+            </div>
+        </div>
+        <div id="imageGrid" class="image-grid"></div>
+    </div>
+
+    <!-- Phones Section -->
+    <div id="phonesSection" class="section hidden">
+        <div class="toolbar">
+            <div class="search-group">
+                <input type="text" id="phoneSearch" placeholder="搜尋分機..." style="width: 300px;">
+                <button onclick="searchPhones()">搜尋</button>
+                <button class="btn-clear" onclick="clearInput('phoneSearch')">清除</button>
+            </div>
+            
+            <!-- Auth Only Controls -->
+            <div id="phoneAuthControls" class="hidden">
+                <button onclick="exportToExcel('phones')" style="background: #20B2AA;">匯出 Excel</button>
+                <button onclick="document.getElementById('phoneImport').click()" style="background: #DAA520;">匯入 Excel</button>
+                <input type="file" id="phoneImport" accept=".xlsx" style="display: none;" onchange="importExcel('phones', this)">
+                <button id="btn-clearPhones" onclick="deleteAllPhones()" style="background: #CD5C5C; margin-left: 10px;" class="hidden">清空資料</button>
+            </div>
+        </div>
+        <div id="phonesTableContainer"></div>
+    </div>
+
+    <!-- Dispatch Section -->
+    <div id="dispatchSection" class="section hidden">
+        <div class="toolbar">
+            <div class="search-group">
+                <input type="text" id="dispatchSearch" placeholder="搜尋調度電話..." style="width: 300px;">
+                <button onclick="searchDispatch()">搜尋</button>
+                <button class="btn-clear" onclick="clearInput('dispatchSearch')">清除</button>
+            </div>
+            
+            <!-- Auth Only Controls -->
+            <div id="dispatchAuthControls" class="hidden">
+                <button onclick="exportToExcel('dispatch')" style="background: #20B2AA;">匯出 Excel</button>
+                <button onclick="document.getElementById('dispatchImport').click()" style="background: #DAA520;">匯入 Excel</button>
+                <input type="file" id="dispatchImport" accept=".xlsx" style="display: none;" onchange="importExcel('dispatch', this)">
+                <button id="btn-clearDispatch" onclick="deleteAllDispatch()" style="background: #CD5C5C; margin-left: 10px;" class="hidden">清空資料</button>
+            </div>
+        </div>
+        <div id="dispatchTableContainer"></div>
+    </div>
+
+    <!-- Word Convert Section -->
+    <div id="wordConvertSection" class="section hidden">
+        <div class="toolbar">
+            <h3>Word 轉 PDF / 圖片</h3>
+            <div style="flex-grow: 1;"></div>
+        </div>
+        <div style="padding: 20px; text-align: center; background: var(--card-bg); border-radius: 8px; margin-top: 15px;">
+            <div id="dropZone" style="border: 2px dashed #666; padding: 40px; border-radius: 10px; cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('wordInput').click()">
+                <p style="font-size: 1.2rem; color: #aaa; margin-bottom: 15px;">點擊選擇 Word 檔案 (.docx)</p>
+                <div style="font-size: 0.9rem; color: #FF9800; margin-bottom: 15px;">注意：網頁版主要支援 .docx 格式，.doc 請先另存新檔</div>
+                <button style="font-size: 1.1rem; padding: 10px 25px;">選擇檔案</button>
+                <input type="file" id="wordInput" accept=".doc,.docx" style="display: none;" onchange="handleWordUpload(this)">
+            </div>
+            
+            <div id="convertStatus" style="margin-top: 20px; display: none;">
+                <div id="convertSpinner" style="display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; vertical-align: middle;"></div>
+                <span id="convertMsg" style="margin-left: 10px; font-size: 1.1rem; vertical-align: middle;">正在處理中...</span>
+            </div>
+
+            <div id="convertResult" style="margin-top: 20px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>預覽與下載</h3>
+                    <button onclick="resetWordConvert()">重新上傳</button>
+                </div>
+                <!-- Hidden container for rendering -->
+                <div id="docxContainer" style="background: white; color: black; padding: 20px; margin: 0 auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); overflow: auto; max-height: 500px; width: fit-content; min-width: 600px;"></div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <button onclick="savePdf()" style="background: #D32F2F; font-size: 1.1rem;">另存為 PDF</button>
+                    <button id="btnUploadPdf" onclick="uploadPdfAsImage()" style="background: #1976D2; font-size: 1.1rem; display: none;">上傳並轉圖</button>
+                    <button onclick="downloadDocImage()" style="background: #228B22; font-size: 1.1rem;">下載為圖片 (JPG)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    const SUPABASE_URL = 'https://uelrewmkmderacsqqkpk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_LOi6vuzP3h-T14-43ujocQ_gjJpsToT';
+    // ==========================================
+    
+    // Global Error Handler for user feedback
+    window.onerror = function(msg, url, line, col, error) {
+        const errDiv = document.getElementById('globalError');
+        if (errDiv) {
+            errDiv.style.display = 'block';
+            errDiv.innerHTML += `<div>${msg} (Line ${line})</div>`;
+        }
+        return false;
+    };
+
+    let supabaseClient = null;
+
+    // Initialize Supabase safely
+    try {
+        if (window.supabase) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+            console.error('Supabase library not loaded (window.supabase is undefined)');
+        }
+    } catch (e) {
+        console.error('Supabase initialization failed:', e);
+    }
+
+    if (!supabaseClient) {
+        setTimeout(() => {
+             const errDiv = document.getElementById('globalError');
+             if (errDiv) {
+                 errDiv.style.display = 'block';
+                 errDiv.innerHTML += `<div>錯誤：無法載入 Supabase 系統元件。請確認網路連線。</div>`;
+             }
+        }, 2000);
+    }
+
+    let currentUser = null;
+    let phoneData = [];
+    let dispatchData = [];
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+        // if (supabaseClient) {
+        //     loadInitialData(); // Removed as per user request: "Show data only after search"
+        // }
+        
+        // Force UI State Update to ensure buttons are correctly set
+        updateUIState();
+        
+        // Initial empty state message
+        document.getElementById('imageGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">請輸入關鍵字搜尋圖片</div>';
+        document.getElementById('phonesTableContainer').innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">請輸入關鍵字搜尋分機</div>';
+        document.getElementById('dispatchTableContainer').innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">請輸入關鍵字搜尋調度電話</div>';
+        
+        // Attach event listeners explicitly if inline onclick fails
+        document.getElementById('imgSearch').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchImages();
+        });
+        document.getElementById('phoneSearch').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchPhones();
+        });
+         document.getElementById('dispatchSearch').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchDispatch();
+        });
+    });
+
+    function showLoginModal() {
+        document.getElementById('loginOverlay').classList.remove('hidden');
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('password').value = '';
+        setTimeout(() => document.getElementById('password').focus(), 100);
+    }
+
+    function hideLoginModal() {
+        document.getElementById('loginOverlay').classList.add('hidden');
+    }
+
+    function clearInput(id) {
+        document.getElementById(id).value = '';
+        document.getElementById(id).focus();
+        
+        // Clear results based on input ID and restore initial message
+        if (id === 'imgSearch') {
+            document.getElementById('imageGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">請輸入關鍵字搜尋圖片</div>';
+        } else if (id === 'phoneSearch') {
+            document.getElementById('phonesTableContainer').innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">請輸入關鍵字搜尋分機</div>';
+        } else if (id === 'dispatchSearch') {
+            document.getElementById('dispatchTableContainer').innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">請輸入關鍵字搜尋調度電話</div>';
+        }
+    }
+
+    // Login Logic
+    async function handleLogin() {
+        if (!supabaseClient) { alert('系統未連線，無法登入'); return; }
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+        
+        // Hash password with SHA-256
+        const encoder = new TextEncoder();
+        const dataBuffer = encoder.encode(pass);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('username', user)
+                .single();
+
+            if (error || !data) {
+                throw new Error('User not found');
             }
-            const images = [
-             'group_4/6SCC80T1.jpg', 'group_4/6SCC80T2.jpg', 'group_4/A11611.jpg', 'group_4/A11612.jpg', 'group_4/A35311.jpg', 'group_4/A53411.jpg', 'group_4/B35411.jpg', 'group_4/B35412.jpg', 
-             'group_4/B35421.jpg', 'group_4/B35422.jpg', 'group_4/B54611.jpg', 'group_4/B54612.jpg', 'group_4/B57311.jpg', 'group_4/B59121.jpg', 'group_4/B59122.jpg', 
-             'group_4/B62111.jpg', 'group_4/B62112.jpg', 'group_4/B62221.jpg', 'group_4/B62222.jpg', 'group_4/C11011.jpg', 'group_4/C11012.jpg', 'group_4/C11211.jpg','group_4/C11711.jpg', 
-             'group_4/C11712.jpg', 'group_4/C11811.jpg', 'group_4/C11911.jpg', 'group_4/C11912.jpg', 'group_4/C35311.jpg', 'group_4/C35312.jpg', 'group_4/C35321.jpg', 'group_4/C35322.jpg', 'group_4/C35611.jpg', 
-             'group_4/C35612.jpg', 'group_4/C35711.jpg', 'group_4/C35712.jpg', 'group_4/C52411.jpg', 'group_4/C53511.jpg', 'group_4/C53512.jpg', 'group_4/C54711.jpg', 
-             'group_4/C54712.jpg', 'group_4/CSU11.jpg', 'group_4/CSU12.jpg', 'group_4/CSU21.jpg', 'group_4/CSU22.jpg', 'group_4/D35311.jpg', 'group_4/D35312.jpg', 
-             'group_4/D35321.jpg', 'group_4/D35322.jpg', 'group_4/D56421.jpg', 'group_4/D56422.jpg', 'group_4/E54411.jpg', 'group_4/E54412.jpg', 'group_4/E54511.jpg', 
-             'group_4/E54512.jpg', 'group_4/F61011.jpg', 'group_4/F61012.jpg', 'group_4/F61021.jpg', 'group_4/F61022.jpg', 'group_4/F61031.jpg', 'group_4/F61032.jpg', 
-             'group_4/H52521.jpg', 'group_4/H53511.jpg', 'group_4/H53512.jpg', 'group_4/H53521.jpg', 'group_4/H53522.jpg', 'group_4/J48111.jpg', 'group_4/J48112.jpg', 
-             'group_4/J61011.jpg', 'group_4/J61012.jpg', 'group_4/J61021.jpg', 'group_4/J61022.jpg', 'group_4/J61031.jpg', 'group_4/J610320.jpg', 'group_4/J61041.jpg', 
-             'group_4/J61042.jpg', 'group_4/J61051.jpg', 'group_4/J61052.jpg', 'group_4/J61061.jpg', 'group_4/J61062.jpg', 'group_4/J61071.jpg', 'group_4/J61072.jpg', 
-             'group_4/J64111.jpg', 'group_4/J64112.jpg', 'group_4/J68011.jpg', 'group_4/J68012.jpg', 'group_4/J68021.jpg', 'group_4/J68022.jpg', 'group_4/J68031.jpg', 
-             'group_4/J68032.jpg', 'group_4/J68041.jpg', 'group_4/J68042.jpg', 'group_4/J68051.jpg', 'group_4/J68052.jpg', 'group_4/J68071.jpg', 'group_4/J68072.jpg', 
-             'group_4/K61611.jpg', 'group_4/K61612.jpg', 'group_4/K61621.jpg', 'group_4/K61622.jpg', 'group_4/K64221.jpg', 'group_4/K64222.jpg', 'group_4/N62011.jpg', 
-             'group_4/N62012.jpg', 'group_4/N62021.jpg', 'group_4/Q53121.jpg', 'group_4/Q53122.jpg', 'group_4/Q54121.jpg','group_4/Q61711.jpg', 'group_4/Q61712.jpg', 'group_4/Q61721.jpg', 'group_4/Q61722.jpg', 
-             'group_4/T35311.jpg', 'group_4/T35312.jpg', 'group_4/T35321.jpg', 'group_4/T35322.jpg', 'group_4/T48311.jpg', 'group_4/T48312.jpg', 'group_4/T51711.jpg', 
-             'group_4/T51712.jpg', 'group_4/T51821.jpg', 'group_4/T51822.jpg', 'group_4/T68021.jpg', 'group_4/T68022.jpg', 'group_4/T68041.jpg', 'group_4/T68042.jpg', 
-             'group_4/T68051.jpg', 'group_4/U61251.jpg', 'group_4/U61252.jpg', 'group_4/U62121.jpg', 'group_4/U62122.jpg', 'group_4/Y52121.jpg', 'group_4/Y53111.jpg', 
-             'group_4/Y53112.jpg', 'group_4/Y54101.jpg', 'group_4/Y54102.jpg', 'group_4/Z68011.jpg', 'group_4/Z68012.jpg', 'group_4/Z68021.jpg', 'group_4/Z68022.jpg', 
-             'group_4/Z68031.jpg', 'group_4/Z68032.jpg', 'group_4/Z68041.jpg', 'group_4/Z68042.jpg', 'group_4/Z68061.jpg', 'group_4/Z68062.jpg', 'group_4/Z68071.jpg', 'group_4/W5core.jpg','group_4/Z68072.jpg', 'group_4/Z68081.jpg', 'group_4/Z68082.jpg', 'group_4/CM.jpg', 
-             'group_4/密碼.jpg', 'group_4/分機1.jpg', 'group_4/分機2.jpg', 'group_4/分機3.jpg', 'group_4/分機4.jpg', 'group_4/分機5.jpg', 'group_4/分機6.jpg', 'group_4/分機7.jpg','group_4/分機8.jpg',   
-             'group_3/C346立體倉儲高聲電話系統圖.JPG', 'group_3/PKL-檢驗站高聲電話系統圖.JPG', 
-             'group_3/SCC-4.5 E-F  4161-4162天車  三階.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0001.JPG', 'group_3/W3三階廠內(F3)PA系統位置圖-0002.JPG', 'group_3/W3三階轉爐廠間高聲電話系統圖(含位置).JPG',
-             'group_3/W3對4121天車CO系統位置圖.JPG', 'group_3/W3對4151天車RO系統位置圖.JPG', 'group_3/W3對4161天車T1系統位置圖.JPG', 'group_3/W21一二階煉焦廠PA位置圖.JPG', 'group_3/W21一二階煉焦廠PA系統圖.JPG',
-             'group_3/W21三階煉焦廠PA位置圖.JPG', 'group_3/W21三階煉焦廠PA系統圖.JPG', 'group_3/W212-3推焦車-PA.JPG','group_3/W214-3CDQPA系統圖.JPG', 'group_3/W214-4CDQ高聲電話系統圖.JPG', 'group_3/W214-5號導焦-PA.JPG',
-             'group_3/W214-6加料車-PA.JPG', 'group_3/W372_KR_F3高聲電話系統圖.JPG', 'group_3/W373-2RH高聲電話系統圖.JPG', 'group_3/W373-3LF高聲電話系統圖.JPG', 'group_3/Y52電氣鍍鋅場(EGL)PA位置圖.JPG',
-             'group_3/Y52電氣鍍鋅場(EGL)PA系統圖.JPG', 'group_3/Y511PLCM高聲電話位置圖.JPG', 'group_3/Y511PLCM高聲電話系統圖.JPG', 'group_3/Y523-2CAL高聲電話位置圖.JPG', 'group_3/Y523-2CAL高聲電話系統圖.JPG','group_3/g4.jpg','group_3/Y515_系統圖.jpg','group_3/Y515_位置說明_第1頁.jpg','group_3/W212CDQ-南側導焦車_系統圖.JPG','group_3/W212CDQ-南側導焦車_位置說明_第1頁.JPG',
-            ];
-            const filteredImages = images.filter(image => image.toLowerCase().includes(input));
-            if (filteredImages.length > 0) {
-                const newWindow = window.open("", "_blank");
-                newWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html lang="zh-Hant">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>搜尋結果</title>
-                        <style>
-                            body {
-                                margin: 0;
-                                padding: 0;
-                                min-height: 100vh;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                background: #f0f0f0;
-                            }
-                            .image-container {
-                                width: 100%;
-                                max-width: 100vw;
-                                padding: 20px;
-                                box-sizing: border-box;
-                            }
-                            img {
-                                width: 100%;
-                                height: auto;
-                                max-height: 90vh;
-                                object-fit: contain;
-                                display: block;
-                                margin: 10px auto;
-                                background: white;
-                                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="image-container">
-                            ${filteredImages.map(img => `<img src="${img}" alt="搜尋結果" />`).join('')}
-                        </div>
-                    </body>
-                    </html>
-                `);
-                newWindow.document.close();
+
+            if (data.password === hashHex) {
+                currentUser = data;
+                hideLoginModal();
+                updateUIState();
+                sendTelegramNotification(`<b>登入通知</b>\n用戶: ${data.username}\n時間: ${new Date().toLocaleString()}`);
             } else {
-                alert('未找到符合的圖片');
+                document.getElementById('loginError').style.display = 'block';
+            }
+        } catch (e) {
+            console.error(e);
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        updateUIState();
+    }
+
+    function getRoleName(role) {
+        return role === 'admin' ? '管理員' : '一般用戶';
+    }
+
+    function updateUIState() {
+        const isLoggedIn = !!currentUser;
+        
+        // Header Buttons
+        if (isLoggedIn) {
+            document.getElementById('loginBtn').classList.add('hidden');
+            document.getElementById('userControls').classList.remove('hidden');
+            document.getElementById('userInfo').textContent = `你好, ${currentUser.username} (${getRoleName(currentUser.role)})`;
+        } else {
+            document.getElementById('loginBtn').classList.remove('hidden');
+            document.getElementById('userControls').classList.add('hidden');
+        }
+
+        // Auth Controls (Upload/Import/Export)
+        const authControls = ['imgAuthControls', 'phoneAuthControls', 'dispatchAuthControls'];
+        authControls.forEach(id => {
+            if (isLoggedIn) document.getElementById(id).classList.remove('hidden');
+            else document.getElementById(id).classList.add('hidden');
+        });
+
+        // Toggle Upload PDF Button
+        const btnUploadPdf = document.getElementById('btnUploadPdf');
+        if (btnUploadPdf) {
+            btnUploadPdf.style.display = isLoggedIn ? 'inline-block' : 'none';
+        }
+
+        // Admin Only Controls
+        const adminControls = ['btn-clearPhones', 'btn-clearDispatch'];
+        adminControls.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (isLoggedIn && currentUser.role === 'admin') el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        });
+
+        // Re-render tables to update contenteditable and delete buttons
+        // Only if data exists (to avoid clearing tables on simple logout)
+        if (phoneData.length > 0) renderPhoneTable(phoneData);
+        if (dispatchData.length > 0) renderDispatchTable(dispatchData);
+        // searchImages(); // Removed to prevent auto-loading
+    }
+
+    // ================= TELEGRAM NOTIFICATION =================
+    async function sendTelegramNotification(message) {
+        if (!supabaseClient) return;
+        try {
+            // Call the secure database function
+            await supabaseClient.rpc('send_telegram_notification', { 
+                message_text: message 
+            });
+        } catch (e) {
+            console.error('Failed to send notification', e);
+        }
+    }
+
+    // Word Conversion Logic (Client-side)
+    async function handleWordUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const statusDiv = document.getElementById('convertStatus');
+        const msgSpan = document.getElementById('convertMsg');
+        const resultDiv = document.getElementById('convertResult');
+        const dropZone = document.getElementById('dropZone');
+        const container = document.getElementById('docxContainer');
+        
+        dropZone.style.display = 'none';
+        statusDiv.style.display = 'block';
+        msgSpan.textContent = '正在解析文件...';
+        resultDiv.style.display = 'none';
+        container.innerHTML = '';
+
+        try {
+            // Read file as ArrayBuffer
+            const arrayBuffer = await file.arrayBuffer();
+            
+            // Render DOCX
+            msgSpan.textContent = '正在渲染...';
+            await renderDocx(arrayBuffer, container);
+            
+            statusDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            msgSpan.textContent = '錯誤: ' + error.message;
+            if (file.name.endsWith('.doc')) {
+                 msgSpan.innerHTML += '<br><br><b>注意：不支援 .doc 舊版格式，請另存為 .docx 後再試。</b>';
+            }
+            // Provide a button to retry
+            const retryBtn = document.createElement('button');
+            retryBtn.textContent = '重試';
+            retryBtn.style.marginTop = '10px';
+            retryBtn.onclick = () => {
+                resetWordConvert();
+            };
+            msgSpan.appendChild(document.createElement('br'));
+            msgSpan.appendChild(retryBtn);
+        }
+    }
+
+    function renderDocx(arrayBuffer, container) {
+        return new Promise((resolve, reject) => {
+            const options = {
+                className: "docx-wrapper",
+                inWrapper: false, // Don't create wrapper, render directly
+                ignoreWidth: false,
+                ignoreHeight: false,
+                breakPages: true,
+                useBase64URL: true // Important for images
+            };
+            
+            docx.renderAsync(arrayBuffer, container, null, options)
+                .then(() => resolve())
+                .catch(err => reject(err));
+        });
+    }
+    
+    function resetWordConvert() {
+        document.getElementById('convertResult').style.display='none'; 
+        document.getElementById('convertStatus').style.display='none';
+        document.getElementById('dropZone').style.display='block';
+        document.getElementById('wordInput').value = '';
+    }
+
+    async function generatePdfBlob() {
+        const element = document.getElementById('docxContainer');
+        // Use html2pdf to generate blob
+        const opt = {
+            margin:       10,
+            filename:     'converted.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        // Return promise that resolves to blob
+        return await html2pdf().set(opt).from(element).output('blob');
+    }
+
+    async function savePdf() {
+        const btn = event.target;
+        const oldText = btn.textContent;
+        btn.textContent = '產生 PDF 中...';
+        btn.disabled = true;
+
+        try {
+            const element = document.getElementById('docxContainer');
+            const opt = {
+                margin:       10,
+                filename:     'converted.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            await html2pdf().set(opt).from(element).save();
+        } catch (e) {
+            console.error(e);
+            alert('PDF 產生失敗: ' + e.message);
+        } finally {
+            btn.textContent = oldText;
+            btn.disabled = false;
+        }
+    }
+
+    async function uploadPdfAsImage() {
+        if (!currentUser) {
+            alert('請先登入');
+            showLoginModal();
+            return;
+        }
+        
+        const btn = event.target;
+        const oldText = btn.textContent;
+        btn.textContent = '轉換並上傳中...';
+        btn.disabled = true;
+
+        try {
+            const pdfBlob = await generatePdfBlob();
+            // Create a File object from Blob
+            const pdfFile = new File([pdfBlob], "converted_word.pdf", { type: "application/pdf" });
+            
+            // Create dummy input object to mimic <input type="file">
+            const dummyInput = { files: [pdfFile] };
+            
+            // Call existing upload handler
+            await handleImageUpload(dummyInput);
+            
+        } catch (e) {
+            console.error(e);
+            alert('處理失敗: ' + e.message);
+        } finally {
+            btn.textContent = oldText;
+            btn.disabled = false;
+        }
+    }
+
+    async function downloadDocImage() {
+        const container = document.getElementById('docxContainer');
+        if (!container) return;
+        
+        const originalOverflow = container.style.overflow;
+        const originalMaxHeight = container.style.maxHeight;
+        
+        // Temporarily expand for full screenshot
+        container.style.overflow = 'visible';
+        container.style.maxHeight = 'none';
+        
+        // Show loading
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '處理中...';
+        btn.disabled = true;
+
+        try {
+            const canvas = await html2canvas(container, {
+                scale: 2, // Higher resolution
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            
+            // Trigger download
+            const link = document.createElement('a');
+            link.download = 'converted-document.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+            
+        } catch (e) {
+            alert('圖片產生失敗: ' + e.message);
+        } finally {
+            // Restore styles
+            container.style.overflow = originalOverflow;
+            container.style.maxHeight = originalMaxHeight;
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function switchTab(tabName, clickedElement) {
+        document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+        document.getElementById(tabName + 'Section').classList.remove('hidden');
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        // If clickedElement is provided, use it; otherwise find by text or index (fallback)
+        if (clickedElement) {
+            clickedElement.classList.add('active');
+        } else if (event && event.target) {
+             event.target.classList.add('active');
+        }
+    }
+
+    async function loadInitialData() {
+        searchImages();
+        searchPhones();
+        searchDispatch();
+    }
+
+    function toggleMore(id, count) {
+        const el = document.getElementById(id);
+        const btn = document.getElementById('btn-' + id);
+        if (el.classList.contains('hidden')) {
+            el.classList.remove('hidden');
+            btn.innerText = '隱藏其餘結果';
+        } else {
+            el.classList.add('hidden');
+            btn.innerText = `顯示其餘 ${count} 筆結果`;
+        }
+    }
+
+    // ================= IMAGES =================
+    async function searchImages() {
+        const query = document.getElementById('imgSearch').value;
+        if (query) sendTelegramNotification(`<b>查詢通知 (圖片)</b>\n關鍵字: ${query}\n用戶: ${currentUser ? currentUser.username : '訪客'}`);
+        
+        let dbQuery = supabaseClient.from('images').select('*');
+        
+        if (query) {
+            dbQuery = dbQuery.ilike('filename', `%${query}%`);
+        }
+        
+        const { data, error } = await dbQuery;
+        if (error) { console.error('Error loading images', error); return; }
+
+        renderImages(data);
+    }
+
+    async function searchLatestImages() {
+        if (currentUser) sendTelegramNotification(`<b>查詢通知 (最新圖片)</b>\n用戶: ${currentUser.username}`);
+        
+        const { data, error } = await supabaseClient
+            .from('images')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+            
+        if (error) { console.error('Error loading latest images', error); alert('載入失敗'); return; }
+        renderImages(data);
+    }
+
+    function renderImages(data) {
+        const grid = document.getElementById('imageGrid');
+        grid.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            grid.innerHTML = '<div style="width:100%; text-align:center; color:#666; padding:20px;">無符合圖片</div>';
+            return;
+        }
+
+        data.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'image-item';
+            // Construct Public URL
+            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/images/${img.file_path}`;
+            
+            let deleteBtn = '';
+            if (currentUser && currentUser.role === 'admin') {
+                const safeFilename = (img.filename || '').replace(/'/g, "\\'");
+                deleteBtn = `<div style="margin-top:5px;"><button onclick="deleteImage('${img.id}', '${img.file_path}', '${safeFilename}')" style="background:#ff4444;color:white;border:none;padding:5px 10px;cursor:pointer;border-radius:3px;">刪除</button></div>`;
+            }
+
+            // Name Display / Edit Logic
+            let nameHtml = `<div style="margin-top:5px; word-break:break-all;">${img.filename}</div>`;
+            
+            if (currentUser) {
+                const safeName = (img.filename || '').replace(/"/g, '&quot;');
+                nameHtml = `
+                <div class="img-name-container" style="margin-top:5px;">
+                    <div id="name-display-${img.id}" style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                        <span style="word-break:break-all;">${img.filename}</span>
+                        <button onclick="enableImageEdit('${img.id}')" style="background:none; border:none; cursor:pointer; opacity:0.6;" title="修改名稱">✏️</button>
+                    </div>
+                    <div id="name-edit-${img.id}" style="display:none;">
+                        <input type="text" id="input-${img.id}" value="${safeName}" style="width:100%; box-sizing:border-box; padding:4px; margin-bottom:4px; border:1px solid #ccc; border-radius:3px;">
+                        <div>
+                            <button onclick="saveImageName('${img.id}')" style="background:#4caf50; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:12px; cursor:pointer;">儲存</button>
+                            <button onclick="cancelImageEdit('${img.id}')" style="background:#757575; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:12px; cursor:pointer;">取消</button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            div.innerHTML = `
+                <img src="${publicUrl}" loading="lazy" onclick="window.open('${publicUrl}')">
+                ${nameHtml}
+                ${deleteBtn}
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    function enableImageEdit(id) {
+        const display = document.getElementById(`name-display-${id}`);
+        const edit = document.getElementById(`name-edit-${id}`);
+        if(display) display.style.display = 'none';
+        if(edit) edit.style.display = 'block';
+    }
+
+    function cancelImageEdit(id) {
+        const display = document.getElementById(`name-display-${id}`);
+        const edit = document.getElementById(`name-edit-${id}`);
+        const input = document.getElementById(`input-${id}`);
+        const nameSpan = display ? display.querySelector('span') : null;
+        
+        if(display) display.style.display = 'flex';
+        if(edit) edit.style.display = 'none';
+        if(input && nameSpan) input.value = nameSpan.innerText;
+    }
+
+    async function saveImageName(id) {
+        const input = document.getElementById(`input-${id}`);
+        const newName = input.value.trim();
+        if (!newName) return alert('名稱不能為空');
+        
+        const btn = event.target; 
+        const originalText = btn.innerText;
+        btn.innerText = '...';
+        btn.disabled = true;
+
+        const { error } = await supabaseClient
+            .from('images')
+            .update({ filename: newName })
+            .eq('id', id);
+            
+        btn.innerText = originalText;
+        btn.disabled = false;
+
+        if (error) {
+            alert('更新失敗: ' + error.message);
+        } else {
+            const display = document.getElementById(`name-display-${id}`);
+            const nameSpan = display.querySelector('span');
+            const oldName = nameSpan ? nameSpan.innerText : '(Unknown)';
+            if(nameSpan) nameSpan.innerText = newName;
+            
+            const time = new Date().toLocaleString();
+            sendTelegramNotification(`<b>圖片名稱修改通知</b>\n用戶: ${currentUser.username}\n時間: ${time}\n舊名稱: ${oldName}\n新名稱: ${newName}`);
+            
+            cancelImageEdit(id);
+        }
+    }
+
+    async function handleImageUpload(input) {
+        if (!currentUser) return;
+        if (!input.files.length) return;
+        
+        let uploadedFiles = [];
+
+        // Helper to convert blob to file object for uploading
+        const blobToFile = (blob, fileName) => {
+            return new File([blob], fileName, { type: 'image/png' });
+        };
+
+        // Helper to capture element to blob
+        const captureElement = async (element) => {
+            document.body.appendChild(element);
+            try {
+                const canvas = await html2canvas(element, {
+                    backgroundColor: '#ffffff',
+                    scale: 2 // Better quality
+                });
+                return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            } finally {
+                document.body.removeChild(element);
+            }
+        };
+
+        for (const file of input.files) {
+            let fileToUpload = file;
+            let originalName = file.name;
+            let fileNameBase = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
+            
+            const ext = originalName.split('.').pop().toLowerCase();
+
+            try {
+                if (['xls', 'xlsx'].includes(ext)) {
+                    // Handle Excel
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer);
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const html = XLSX.utils.sheet_to_html(worksheet);
+                    
+                    const container = document.createElement('div');
+                    container.style.position = 'absolute';
+                    container.style.left = '-9999px';
+                    container.style.top = '0';
+                    container.style.background = 'white';
+                    container.style.padding = '20px';
+                    container.style.width = 'fit-content';
+                    container.innerHTML = html;
+                    
+                    // Style the table for better look
+                    const table = container.querySelector('table');
+                    if (table) {
+                        table.style.borderCollapse = 'collapse';
+                        table.style.width = '100%';
+                        table.querySelectorAll('td, th').forEach(cell => {
+                            cell.style.border = '1px solid black';
+                            cell.style.padding = '5px';
+                        });
+                    }
+
+                    const blob = await captureElement(container);
+                    if (blob) {
+                        fileToUpload = blobToFile(blob, fileNameBase + '.png');
+                        originalName = fileNameBase + '.png'; // Update name for DB
+                    }
+                } else if (ext === 'pdf') {
+                    // Handle PDF
+                    const arrayBuffer = await file.arrayBuffer();
+                    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                    const pdf = await loadingTask.promise;
+                    
+                    // Iterate through ALL pages
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const scale = 2; // Better quality
+                        const viewport = page.getViewport({ scale: scale });
+                        
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        await page.render({
+                            canvasContext: context,
+                            viewport: viewport
+                        }).promise;
+                        
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        if (blob) {
+                            // Suffix filename with page number if multiple pages
+                            let pageSuffix = pdf.numPages > 1 ? `_p${pageNum}` : '';
+                            let finalName = fileNameBase + pageSuffix + '.png';
+                            
+                            // Upload immediately for each page
+                            const safeName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.png`;
+                            const groupFolder = `group_${currentUser.group_id}`;
+                            const filePath = `${groupFolder}/${safeName}`;
+                            
+                            const { error: uploadError } = await supabaseClient.storage
+                                .from('images')
+                                .upload(filePath, blobToFile(blob, finalName));
+                                
+                            if (uploadError) {
+                                console.error(`Failed to upload page ${pageNum}:`, uploadError);
+                            } else {
+                                // Insert Metadata
+                                await supabaseClient.from('images').insert({
+                                    filename: finalName,
+                                    file_path: filePath,
+                                    group_id: currentUser.group_id,
+                                    uploaded_by: currentUser.id
+                                });
+                                uploadedFiles.push(finalName);
+                            }
+                        }
+                    }
+                    continue; // Skip the standard upload logic at end of loop since we handled it here
+                } else if (['doc', 'docx', 'ppt', 'pptx'].includes(ext)) {
+                    alert(`不支援 Word/PPT 格式: ${originalName}\n請將檔案另存為 PDF 格式後再上傳。`);
+                    continue;
+                }
+            } catch (err) {
+                console.error(`Error converting ${file.name}:`, err);
+                // Translate common error messages
+                let errorMsg = err.message;
+                if (errorMsg.includes("Can't find end of central directory")) {
+                    errorMsg = "檔案格式錯誤 (可能是 .doc 格式但副檔名為 .docx，或檔案損毀)";
+                }
+                alert(`轉換失敗: ${file.name}\n${errorMsg}`);
+                continue;
+            }
+
+            // Generate Safe Storage Path (ASCII only)
+            const uploadExt = originalName.split('.').pop();
+            const safeName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${uploadExt}`;
+            const groupFolder = `group_${currentUser.group_id}`;
+            const filePath = `${groupFolder}/${safeName}`;
+            
+            // 1. Upload to Storage
+            const { error: uploadError } = await supabaseClient.storage
+                .from('images')
+                .upload(filePath, fileToUpload);
+                
+            if (uploadError) {
+                alert(`上傳失敗: ${originalName}`);
+                console.error(uploadError);
+                continue;
+            }
+
+            // 2. Insert Metadata
+            const { error: dbError } = await supabaseClient.from('images').insert({
+                filename: originalName, // Display name
+                file_path: filePath,
+                group_id: currentUser.group_id,
+                uploaded_by: currentUser.id
+            });
+            
+            if (dbError) {
+                console.error(dbError);
+            } else {
+                uploadedFiles.push(originalName);
             }
         }
-    </script>
+        
+        if (uploadedFiles.length > 0) {
+            const time = new Date().toLocaleString();
+            sendTelegramNotification(`<b>圖片上傳通知</b>\n用戶: ${currentUser.username}\n時間: ${time}\n上傳檔案:\n${uploadedFiles.join('\n')}`);
+        }
+
+        alert('上傳完成');
+        searchImages();
+    }
+
+    async function deleteImage(id, filePath, filename) {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        if (!confirm('確定刪除此圖片?')) return;
+
+        // 1. Delete from Storage
+        const { error: storageError } = await supabaseClient.storage
+            .from('images')
+            .remove([filePath]);
+
+        if (storageError) {
+            console.error('Storage delete error:', storageError);
+            alert('圖片檔案刪除失敗: ' + storageError.message);
+            return;
+        }
+
+        // 2. Delete from DB
+        const { error: dbError } = await supabaseClient
+            .from('images')
+            .delete()
+            .eq('id', id);
+
+        if (dbError) {
+            console.error('DB delete error:', dbError);
+            alert('資料庫刪除失敗');
+        } else {
+            const time = new Date().toLocaleString();
+            sendTelegramNotification(`<b>圖片刪除通知</b>\n用戶: ${currentUser.username}\n時間: ${time}\n刪除檔案: ${filename || filePath}`);
+            searchImages();
+        }
+    }
+
+    // Helper to fetch ALL records with pagination loop
+    async function fetchAllRecords(tableName) {
+        let allData = [];
+        let from = 0;
+        const limit = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data, error } = await supabaseClient
+                .from(tableName)
+                .select('*')
+                .range(from, from + limit - 1)
+                .order('extension');
+            
+            if (error) {
+                console.error(`Error fetching ${tableName}:`, error);
+                throw error;
+            }
+
+            if (data && data.length > 0) {
+                allData = allData.concat(data);
+                from += limit;
+                if (data.length < limit) hasMore = false;
+            } else {
+                hasMore = false;
+            }
+        }
+        return allData;
+    }
+
+    // Helper to generate OR filter string
+    function buildOrFilter(query, columns) {
+        return columns.map(col => `${col}.ilike.%${query}%`).join(',');
+    }
+
+    // ================= PHONES =================
+    // phoneData is declared globally above
+    async function searchPhones() {
+        if (!supabaseClient) return;
+        const query = document.getElementById('phoneSearch').value.trim();
+        if (query) sendTelegramNotification(`<b>查詢通知 (分機)</b>\n關鍵字: ${query}\n用戶: ${currentUser ? currentUser.username : '訪客'}`);
+
+        const container = document.getElementById('phonesTableContainer');
+        container.innerHTML = '<div style="text-align:center; padding: 20px;">載入中...</div>';
+
+        try {
+            let dbQuery = supabaseClient.from('phones').select('*').limit(1000).order('extension');
+            
+            if (query) {
+                // Use correct DB column names
+                // Note: 'UG50_port' is the actual column name in DB (verified via check_schema.js)
+                const columns = [
+                    'extension', 'type', 'lens', 'mdf_port', 
+                    'remote_mc_id', 'UG50_port', 'line_group_id', 
+                    'unit', 'location', 'did_number', 'note'
+                ];
+                dbQuery = dbQuery.or(buildOrFilter(query, columns));
+            }
+
+            const { data, error } = await dbQuery;
+            
+            if (error) throw error;
+            
+            phoneData = data;
+            renderPhoneTable(data, query);
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            container.innerHTML = '<div style="color:red; text-align:center;">載入失敗: ' + error.message + '</div>';
+        }
+    }
+
+    function renderPhoneTable(data, query = '') {
+        const container = document.getElementById('phonesTableContainer');
+        if (!data.length) { container.innerHTML = '無資料'; return; }
+        
+        const isEditable = !!currentUser;
+        
+        // Split data if query exists and exact match found
+        let displayData = data;
+        let hiddenData = [];
+        
+        if (query) {
+             const exactMatches = data.filter(row => row.extension === query);
+             if (exactMatches.length > 0) {
+                 const otherMatches = data.filter(row => row.extension !== query);
+                 displayData = exactMatches;
+                 hiddenData = otherMatches;
+             }
+        }
+
+        // Define columns
+        const columns = [
+            { key: 'extension', label: '分機號碼', highlight: true },
+            { key: 'unit', label: '使用單位' },
+            { key: 'line_group_id', label: '線組編號' },
+            { key: 'UG50_port', label: 'UG50' },
+            { key: 'type', label: '分機種類' },
+            { key: 'sub_count', label: '副機數量' },
+            { key: 'did_number', label: 'DID號碼' },
+            { key: 'location', label: '裝機位置' },
+            { key: 'move_record', label: '拆遷紀錄' },
+            { key: 'note', label: '備註' },
+            { key: 'lens', label: 'LENS' },
+            { key: 'mdf_port', label: 'MDF' },
+            { key: 'remote_mc_id', label: 'MC-ID' }
+        ];
+
+        const generateCards = (rows, startIndex = 0) => {
+            if (rows.length === 0) return '';
+            
+            let html = '';
+            rows.forEach((row, index) => {
+                const globalIndex = startIndex + index + 1;
+                html += `<div class="result-card" data-id="${row.id}">
+                    <div class="card-header">
+                        <span>搜尋結果 #${globalIndex}</span>
+                    </div>
+                    <div class="card-body">`;
+                
+                columns.forEach(col => {
+                    const val = row[col.key] || '';
+                    // Logic: Always render if value exists.
+                    // If empty (or just placeholder like '-'):
+                    //   - If !isEditable: Don't render (display: none via class or just omit)
+                    //   - If isEditable: Render but hidden, so enableEdit can show it.
+                    
+                    const strVal = String(val).trim();
+                    const isEmpty = !strVal || strVal === '-' || strVal === '無資料';
+                    
+                    if (isEmpty && !isEditable) return; // Skip completely for viewers
+                    
+                    let rowClass = 'info-row';
+                    if (isEmpty && isEditable) {
+                        rowClass += ' hidden-empty-row'; // Hide initially for editors too
+                    }
+                    
+                    const isHighlight = col.highlight;
+                    const valueClass = isHighlight ? 'info-value highlight-bg' : 'info-value';
+                    const style = isHighlight ? 'display:inline-block; width:auto; flex-grow:0;' : '';
+                    
+                    html += `
+                    <div class="${rowClass}" data-key-container="${col.key}">
+                        <span class="info-label">${col.label} :</span>
+                        <span class="${valueClass}" data-key="${col.key}" style="${style}">${val}</span>
+                    </div>`;
+                });
+                
+                html += `</div>`; // End card-body
+                
+                if (isEditable) {
+                    html += `
+                    <div class="card-actions">
+                        <button onclick="enableEdit(this, 'phones')">修改</button>
+                        <button onclick="deletePhone('${row.id}')" style="background:#d32f2f;">刪除</button>
+                    </div>`;
+                }
+                
+                html += `</div>`; // End result-card
+            });
+            return html;
+        };
+
+        let html = generateCards(displayData, 0);
+
+        if (hiddenData.length > 0) {
+            html += `<div style="margin-top: 10px; text-align: center;">
+                <button id="btn-morePhones" onclick="toggleMore('morePhones', ${hiddenData.length})">顯示其餘 ${hiddenData.length} 筆結果</button>
+            </div>`;
+            html += `<div id="morePhones" class="hidden">`;
+            html += generateCards(hiddenData, displayData.length);
+            html += `</div>`;
+        }
+        
+        container.innerHTML = html;
+    }
+
+    // ================= EDIT / SAVE / CANCEL HELPERS =================
+    let originalRowData = {};
+
+        function enableEdit(btn, type) {
+        const card = btn.closest('.result-card');
+        const rowId = card.dataset.id;
+        
+        // Store original data
+        originalRowData[rowId] = card.innerHTML;
+
+        // Reveal hidden empty rows for editing
+        const hiddenRows = card.querySelectorAll('.hidden-empty-row');
+        hiddenRows.forEach(row => {
+            row.classList.remove('hidden-empty-row');
+        });
+
+        // Make cells editable
+        const values = card.querySelectorAll('.info-value[data-key]');
+        values.forEach(div => {
+            div.contentEditable = true;
+            if (div.innerText === '無資料') div.innerText = '';
+        });
+
+        // Change buttons
+        const actionDiv = card.querySelector('.card-actions');
+        actionDiv.innerHTML = `
+            <button class="btn-save" onclick="saveEdit(this, '${rowId}', '${type}')" style="background:#4caf50;">確認</button>
+            <button class="btn-cancel" onclick="cancelEdit(this, '${rowId}')" style="background:#757575;">取消</button>
+        `;
+    }
+
+    function cancelEdit(btn, rowId) {
+        const card = btn.closest('.result-card');
+        if (originalRowData[rowId]) {
+            card.innerHTML = originalRowData[rowId];
+            delete originalRowData[rowId];
+        }
+    }
+    
+    async function saveEdit(btn, id, table) {
+        if (!confirm('確定要修改嗎？')) return;
+        
+        const card = btn.closest('.result-card');
+        const values = card.querySelectorAll('.info-value[data-key]');
+        const updates = {};
+        
+        values.forEach(div => {
+            const key = div.dataset.key;
+            const value = div.innerText.trim();
+            updates[key] = value;
+        });
+        
+        // Detect changes for notification
+        let changedDetails = [];
+        let extension = updates['extension'] || ''; // Default, will try to find below
+        
+        if (originalRowData[id]) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = originalRowData[id];
+            
+            const originalValues = {};
+            tempDiv.querySelectorAll('.info-value[data-key]').forEach(div => {
+                originalValues[div.dataset.key] = div.innerText.trim();
+            });
+            
+            // If extension was not in updates (e.g. read-only?), get from original
+            if (!extension && originalValues['extension']) {
+                extension = originalValues['extension'];
+            }
+            
+            // Compare
+            for (const key in updates) {
+                let newVal = updates[key];
+                let oldVal = originalValues[key] || '';
+                
+                // Normalize "無資料" or "-" to empty string for comparison
+                const normNew = (newVal === '無資料' || newVal === '-') ? '' : newVal;
+                const normOld = (oldVal === '無資料' || oldVal === '-') ? '' : oldVal;
+                
+                if (normNew !== normOld) {
+                    // Find label
+                    const labelSpan = card.querySelector(`[data-key-container="${key}"] .info-label`);
+                    const label = labelSpan ? labelSpan.innerText.replace(' :', '').trim() : key;
+                    changedDetails.push(`${label}: ${oldVal} -> ${newVal}`);
+                }
+            }
+        } else {
+             // Fallback if original data missing
+             changedDetails.push('無法比對原始資料 (Original data missing)');
+        }
+
+        const originalBtnText = btn.innerText;
+        btn.innerText = '儲存中...';
+        btn.disabled = true;
+        
+        const tableName = table === 'phones' ? 'phones' : 'dispatch_phones';
+        
+        const { error } = await supabaseClient
+            .from(tableName)
+            .update(updates)
+            .eq('id', id);
+            
+        if (error) {
+            alert('更新失敗: ' + error.message);
+            btn.innerText = originalBtnText;
+            btn.disabled = false;
+        } else {
+            // Send Notification
+            const time = new Date().toLocaleString();
+            const changeLog = changedDetails.length > 0 ? changedDetails.join('\n') : '無明顯變更';
+            
+            sendTelegramNotification(
+`<b>資料修改通知</b>
+修改帳號: ${currentUser.username}
+修改分機: ${extension}
+時間: ${time}
+修改欄位:
+${changeLog}`
+            );
+            
+            // Success - refresh row state (turn off edit)
+            values.forEach(div => {
+                div.contentEditable = false;
+            });
+            
+            const actionDiv = card.querySelector('.card-actions');
+            const deleteFunc = table === 'phones' ? `deletePhone('${id}')` : `deleteDispatch('${id}')`;
+            actionDiv.innerHTML = `
+                <button onclick="enableEdit(this, '${table}')">修改</button> 
+                <button onclick="${deleteFunc}" style="background:#d32f2f;">刪除</button>
+            `;
+            
+            delete originalRowData[id];
+        }
+    }
+
+    async function updatePhone(id, field, value) {
+        // Deprecated - kept for reference or direct calls if any
+        if (!currentUser) return;
+        await supabaseClient.from('phones').update({ [field]: value }).eq('id', id);
+    }
+    
+    async function deletePhone(id) {
+        if (!currentUser) return;
+        if(confirm('確定刪除?')) {
+            await supabaseClient.from('phones').delete().eq('id', id);
+            searchPhones();
+        }
+    }
+
+    async function deleteAllPhones() {
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert('權限不足');
+            return;
+        }
+        
+        // Double confirmation for safety
+        if (!confirm('警告：確定要清空所有分機資料嗎？此動作無法復原！')) return;
+        if (!confirm('再次確認：真的要刪除全部資料？')) return;
+        
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = '刪除中...';
+        btn.disabled = true;
+
+        try {
+            // Delete all records where id is not null (effectively all records)
+            // Use not('id', 'is', null) which is valid for UUIDs
+            const { error, count } = await supabaseClient
+                .from('phones')
+                .delete()
+                .not('id', 'is', null);
+            
+            if (error) throw error;
+            
+            alert('已清空所有分機資料');
+            searchPhones(); // Refresh view
+        } catch (e) {
+            console.error('Delete all error:', e);
+            alert('清空失敗: ' + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // ================= DISPATCH =================
+    // dispatchData is declared globally above
+    async function searchDispatch() {
+        if (!supabaseClient) return;
+        const query = document.getElementById('dispatchSearch').value.trim();
+        if (query) sendTelegramNotification(`<b>查詢通知 (調度)</b>\n關鍵字: ${query}\n用戶: ${currentUser ? currentUser.username : '訪客'}`);
+
+        const container = document.getElementById('dispatchTableContainer');
+        container.innerHTML = '<div style="text-align:center; padding: 20px;">載入中...</div>';
+
+        try {
+            let dbQuery = supabaseClient.from('dispatch_phones').select('*').limit(1000).order('extension');
+            
+            if (query) {
+                const columns = [
+                    'extension', 'c_terminal', 'lens', 'line_group_room', 
+                    'line_group_site', 'unit', 'location', 'sub_count', 'contact_tel'
+                ];
+                dbQuery = dbQuery.or(buildOrFilter(query, columns));
+            }
+
+            const { data, error } = await dbQuery;
+            
+            if (error) throw error;
+            
+            dispatchData = data;
+            renderDispatchTable(data, query);
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            container.innerHTML = '<div style="color:red; text-align:center;">載入失敗: ' + error.message + '</div>';
+        }
+    }
+
+    function renderDispatchTable(data, query = '') {
+        const container = document.getElementById('dispatchTableContainer');
+        if (!data.length) { container.innerHTML = '無資料'; return; }
+        
+        const isEditable = !!currentUser;
+
+        // Split data logic
+        let displayData = data;
+        let hiddenData = [];
+        
+        if (query) {
+             const exactMatches = data.filter(row => row.extension === query);
+             if (exactMatches.length > 0) {
+                 const otherMatches = data.filter(row => row.extension !== query);
+                 displayData = exactMatches;
+                 hiddenData = otherMatches;
+             }
+        }
+
+        // Define columns
+        const columns = [
+            { key: 'extension', label: '分機號碼', highlight: true },
+            { key: 'unit', label: '使用單位' },
+            { key: 'c_terminal', label: 'C端子位置' },
+            { key: 'line_group_room', label: '線組編號(機房)' },
+            { key: 'line_group_site', label: '線組編號(現場)' },
+            { key: 'location', label: '裝機位置' },
+            { key: 'sub_count', label: '副機數量' },
+            { key: 'contact_tel', label: '連絡電話' },
+            { key: 'lens', label: 'LENS' }
+        ];
+
+        const generateCards = (rows, startIndex = 0) => {
+            if (rows.length === 0) return '';
+            
+            let html = '';
+            rows.forEach((row, index) => {
+                const globalIndex = startIndex + index + 1;
+                html += `<div class="result-card" data-id="${row.id}">
+                    <div class="card-header">
+                        <span>搜尋結果 #${globalIndex}</span>
+                    </div>
+                    <div class="card-body">`;
+                
+                columns.forEach(col => {
+                    const val = row[col.key] || '';
+                    // Logic: Always render if value exists.
+                    // If empty (or just placeholder like '-'):
+                    //   - If !isEditable: Don't render (display: none via class or just omit)
+                    //   - If isEditable: Render but hidden, so enableEdit can show it.
+                    
+                    const strVal = String(val).trim();
+                    const isEmpty = !strVal || strVal === '-' || strVal === '無資料';
+                    
+                    if (isEmpty && !isEditable) return; // Skip completely for viewers
+                    
+                    let rowClass = 'info-row';
+                    if (isEmpty && isEditable) {
+                        rowClass += ' hidden-empty-row'; // Hide initially for editors too
+                    }
+                    
+                    const isHighlight = col.highlight;
+                    const valueClass = isHighlight ? 'info-value highlight-bg' : 'info-value';
+                    const style = isHighlight ? 'display:inline-block; width:auto; flex-grow:0;' : '';
+                    
+                    html += `
+                    <div class="${rowClass}" data-key-container="${col.key}">
+                        <span class="info-label">${col.label} :</span>
+                        <span class="${valueClass}" data-key="${col.key}" style="${style}">${val}</span>
+                    </div>`;
+                });
+                
+                html += `</div>`; // End card-body
+                
+                if (isEditable) {
+                    html += `
+                    <div class="card-actions">
+                        <button onclick="enableEdit(this, 'dispatch')">修改</button>
+                        <button onclick="deleteDispatch('${row.id}')" style="background:#d32f2f;">刪除</button>
+                    </div>`;
+                }
+                
+                html += `</div>`; // End result-card
+            });
+            return html;
+        };
+
+        let html = generateCards(displayData, 0);
+
+        if (hiddenData.length > 0) {
+            html += `<div style="margin-top: 10px; text-align: center;">
+                <button id="btn-moreDispatch" onclick="toggleMore('moreDispatch', ${hiddenData.length})">顯示其餘 ${hiddenData.length} 筆結果</button>
+            </div>`;
+            html += `<div id="moreDispatch" class="hidden">`;
+            html += generateCards(hiddenData, displayData.length);
+            html += `</div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    async function updateDispatch(id, field, value) {
+        if (!currentUser) return;
+        await supabaseClient.from('dispatch_phones').update({ [field]: value }).eq('id', id);
+    }
+    
+    async function deleteDispatch(id) {
+        if (!currentUser) return;
+        if(confirm('確定刪除?')) {
+            await supabaseClient.from('dispatch_phones').delete().eq('id', id);
+            searchDispatch();
+        }
+    }
+
+    async function deleteAllDispatch() {
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert('權限不足');
+            return;
+        }
+        
+        // Double confirmation for safety
+        if (!confirm('警告：確定要清空所有調度電話資料嗎？此動作無法復原！')) return;
+        if (!confirm('再次確認：真的要刪除全部資料？')) return;
+        
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = '刪除中...';
+        btn.disabled = true;
+
+        try {
+            // Delete all records where id is not null
+            const { error, count } = await supabaseClient
+                .from('dispatch_phones')
+                .delete()
+                .not('id', 'is', null);
+            
+            if (error) throw error;
+            
+            alert('已清空所有調度電話資料');
+            searchDispatch(); // Refresh view
+        } catch (e) {
+            console.error('Delete all error:', e);
+            alert('清空失敗: ' + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // ================= EXCEL IMPORT/EXPORT =================
+    async function exportToExcel(type) {
+        if (!supabaseClient) return;
+        
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = '匯出中...';
+        btn.disabled = true;
+
+        try {
+            const tableName = type === 'phones' ? 'phones' : 'dispatch_phones';
+            
+            let data;
+            try {
+                data = await fetchAllRecords(tableName);
+                
+                // Sort by extension length (ascending) then by value (numeric)
+                // User request: 4 digits first, then 5, then 7, etc. without mixing.
+                if (data && data.length > 0) {
+                    data.sort((a, b) => {
+                        const extA = String(a.extension || '').trim();
+                        const extB = String(b.extension || '').trim();
+                        
+                        // 1. Sort by length
+                        if (extA.length !== extB.length) {
+                            return extA.length - extB.length;
+                        }
+                        
+                        // 2. Sort by value (numeric aware)
+                        return extA.localeCompare(extB, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+                }
+            } catch (error) {
+                alert('匯出失敗: ' + error.message);
+                console.error(error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                alert('無資料可匯出');
+                return;
+            }
+
+            let exportData = [];
+            if (type === 'phones') {
+                // Mapping for phones based on import format
+                // ['號碼', '數位', 'LENS', '機房端子編號', '遠端機櫃UG-50編號', '線組編號', '單位', '裝機位置', '通話等級', '副機數量', 'DID', '備註']
+                exportData = data.map(row => ({
+                    '號碼': row.extension || '',
+                    '數位': row.type || '',
+                    'LENS': row.lens || '',
+                    '機房端子編號': row.mdf_port || '',
+                    '遠端機櫃 MC-ID (第幾對線)': row.remote_mc_id || '',
+                    '遠端機櫃UG-50編號': row.UG50_port || '',
+                    '線組編號': row.line_group_id || '',
+                    '單位': row.unit || '',
+                    '裝機位置': row.location || '',
+                    '通話等級': row.call_class || '',
+                    '副機數量': row.sub_count || '',
+                    'DID': row.did_number || '',
+                    '備註': row.note || ''
+                }));
+            } else {
+                // Mapping for dispatch
+                // ['分機號碼', 'C端子位置', 'LENS', '線組編號(機房)', '線組編號(現場)', '使用單位', '裝機位置', '副機數量', '連絡電話']
+                exportData = data.map(row => ({
+                    '分機號碼': row.extension || '',
+                    'C端子位置': row.c_terminal || '',
+                    'LENS': row.lens || '',
+                    '線組編號(機房)': row.line_group_room || '',
+                    '線組編號(現場)': row.line_group_site || '',
+                    '使用單位': row.unit || '',
+                    '裝機位置': row.location || '',
+                    '副機數量': row.sub_count || '',
+                    '連絡電話': row.contact_tel || ''
+                }));
+            }
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.writeFile(wb, `${type}_data.xlsx`);
+        } catch (e) {
+            console.error('Export error:', e);
+            alert('匯出發生錯誤');
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // Helper to fetch only ID and Extension for mapping
+    async function fetchExistingKeys(tableName) {
+        let allData = [];
+        let from = 0;
+        const limit = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data, error } = await supabaseClient
+                .from(tableName)
+                .select('id, extension') // Fetch only necessary fields
+                .range(from, from + limit - 1);
+            
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = allData.concat(data);
+                from += limit;
+                if (data.length < limit) hasMore = false;
+            } else {
+                hasMore = false;
+            }
+        }
+        return allData;
+    }
+
+    async function importExcel(type, input) {
+        if (!currentUser) return;
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            
+            const table = type === 'phones' ? 'phones' : 'dispatch_phones';
+            
+            const btn = event.target; // Note: event.target might be the input, not the button if triggered by change
+            // Actually input onchange doesn't have a button reference easily unless we find it.
+            // But we can show a loading alert or use global UI blocking if needed.
+            // For now, standard alert flow is fine.
+
+            // 1. Fetch existing data to handle duplicates manually
+            // (Since we don't have a unique constraint on 'extension' in DB)
+            let existingRecords = [];
+            try {
+                existingRecords = await fetchExistingKeys(table);
+            } catch (err) {
+                console.error('Error fetching existing keys:', err);
+                alert('匯入前檢查失敗: ' + err.message);
+                return;
+            }
+            
+            // Map extension -> id
+            const extensionMap = new Map();
+            existingRecords.forEach(r => {
+                if (r.extension) extensionMap.set(String(r.extension).trim(), r.id);
+            });
+
+            // 2. Map Excel columns to DB columns
+            const records = jsonData.map(row => {
+                const newRow = {};
+                
+                if (type === 'phones') {
+                    // Map Chinese headers to DB columns
+                    if (row['號碼'] !== undefined) newRow.extension = row['號碼'];
+                    if (row['數位'] !== undefined) newRow.type = row['數位'];
+                    if (row['LENS'] !== undefined) newRow.lens = row['LENS'];
+                    if (row['機房端子編號'] !== undefined) newRow.mdf_port = row['機房端子編號'];
+                    if (row['遠端機櫃 MC-ID (第幾對線)'] !== undefined) newRow.remote_mc_id = row['遠端機櫃 MC-ID (第幾對線)'];
+                    if (row['遠端機櫃UG-50編號'] !== undefined) newRow.UG50_port = row['遠端機櫃UG-50編號'];
+                    if (row['線組編號'] !== undefined) newRow.line_group_id = row['線組編號'];
+                    if (row['單位'] !== undefined) newRow.unit = row['單位'];
+                    if (row['裝機位置'] !== undefined) newRow.location = row['裝機位置'];
+                    if (row['通話等級'] !== undefined) newRow.call_class = row['通話等級'];
+                    if (row['副機數量'] !== undefined) newRow.sub_count = row['副機數量'];
+                    if (row['DID'] !== undefined) newRow.did_number = row['DID'];
+                    if (row['備註'] !== undefined) newRow.note = row['備註'];
+                    
+                    // Fallback for English headers if present (mixed usage)
+                    if (Object.keys(newRow).length === 0) return row;
+                } else {
+                    if (row['分機號碼'] !== undefined) newRow.extension = row['分機號碼'];
+                    if (row['C端子位置'] !== undefined) newRow.c_terminal = row['C端子位置'];
+                    if (row['LENS'] !== undefined) newRow.lens = row['LENS'];
+                    if (row['線組編號(機房)'] !== undefined) newRow.line_group_room = row['線組編號(機房)'];
+                    if (row['線組編號(現場)'] !== undefined) newRow.line_group_site = row['線組編號(現場)'];
+                    if (row['使用單位'] !== undefined) newRow.unit = row['使用單位'];
+                    if (row['裝機位置'] !== undefined) newRow.location = row['裝機位置'];
+                    if (row['副機數量'] !== undefined) newRow.sub_count = row['副機數量'];
+                    if (row['連絡電話'] !== undefined) newRow.contact_tel = row['連絡電話'];
+                    
+                    if (Object.keys(newRow).length === 0) return row;
+                }
+                
+                // 3. Check for existing ID to perform Update instead of Insert
+                if (newRow.extension) {
+                    const extKey = String(newRow.extension).trim();
+                    if (extensionMap.has(extKey)) {
+                        newRow.id = extensionMap.get(extKey);
+                    }
+                }
+                
+                return newRow;
+            });
+            
+            // Filter out empty rows
+            const validRecords = records.filter(r => Object.keys(r).length > 0);
+
+            if (validRecords.length === 0) {
+                alert('無有效資料可匯入');
+                return;
+            }
+
+            // 4. Perform Upsert (Batched to avoid payload limits)
+            const BATCH_SIZE = 1000;
+            let successCount = 0;
+            let errorCount = 0;
+            
+            // Show processing message
+            const originalTitle = document.title;
+            document.title = '匯入中...';
+
+            for (let i = 0; i < validRecords.length; i += BATCH_SIZE) {
+                const batch = validRecords.slice(i, i + BATCH_SIZE);
+                // upsert without onConflict works if Primary Key (id) is present
+                const { error } = await supabaseClient.from(table).upsert(batch); 
+                
+                if (error) {
+                    console.error('Import batch error:', error);
+                    errorCount += batch.length;
+                } else {
+                    successCount += batch.length;
+                }
+            }
+            
+            document.title = originalTitle;
+
+            if (errorCount > 0) {
+                alert(`匯入完成，但有 ${errorCount} 筆失敗 (成功: ${successCount} 筆)`);
+            } else {
+                alert(`匯入成功 (共 ${successCount} 筆)`);
+            }
+            
+            // Reset input to allow re-uploading same file if needed
+            input.value = '';
+
+            if (type === 'phones') searchPhones(); else searchDispatch();
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+</script>
+
 </body>
 </html>
-
