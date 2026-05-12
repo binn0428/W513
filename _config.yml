@@ -1,1 +1,2 @@
-
+exclude:
+  - migration_tool/node_modules/
